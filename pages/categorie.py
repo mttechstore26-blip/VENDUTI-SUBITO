@@ -1854,6 +1854,7 @@ def detect_family(title, category=None):
             # Vorwerk / Bimby / Folletto
             (r"\bbimby\s*(?:tm|t)?\s*31\b|\bbimby\s+t31\b", "Bimby TM31"),
             (r"\bbimby\s*tm21\b", "Bimby TM21"),
+            (r"\b(?:bimby\s*)?tm\s*5\b|\bbimby\s*t\s*5\b", "Bimby TM5"),
             (r"\bbimby\s*tm6\b|\bboccale\s+tm6\b", "Bimby TM6"),
             (r"\bbimby\s*tm7\b|\bboccale\s+tm7\b", "Bimby TM7"),
             (r"\bbimby\b", "Bimby • Modello non identificato"),
