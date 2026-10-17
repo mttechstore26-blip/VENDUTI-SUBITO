@@ -3282,7 +3282,7 @@ if selected_rows:
 
     if is_ps5_aggregate:
         selected_family_data = detail[
-            detail["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+            detail["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         selected_family_data = detail[
@@ -3306,7 +3306,7 @@ if selected_rows:
     if is_ps5_aggregate:
         selected_family_listings_data = df[
             (df["category"] == selected_category)
-            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         selected_family_listings_data = df[
@@ -3443,7 +3443,7 @@ if selected_rows:
     if is_ps5_aggregate:
         historical_family_data = df[
             (df["category"] == selected_category)
-            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         historical_family_data = df[
