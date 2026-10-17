@@ -2708,7 +2708,7 @@ def prepare_data():
     il clustering venga rieseguito mentre si passa rapidamente da una
     categoria all'altra.
     """
-    data = load_market_data().copy()
+    data = load_market_data(recent_sold_days=90).copy()
 
     if data.empty:
         return data
