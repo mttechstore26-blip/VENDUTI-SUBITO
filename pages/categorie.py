@@ -270,6 +270,9 @@ def detect_family(title, category=None):
             r"\b(?:disc|disk|disco|bluray)\b",
             text,
         ))
+        # "senza disco/lettore" descrive la Digital, non una versione con disco.
+        if re.search(r"\\bsenza\\s+(?:lettore|disco|dischi)\\b", text):
+            disc = False
         if (slim and fat) or (digital and disc):
             return "PS5 • Modello non identificato"
         if slim:
