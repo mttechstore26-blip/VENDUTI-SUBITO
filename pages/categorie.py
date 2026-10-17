@@ -3278,7 +3278,13 @@ if selected_rows:
         "RC / Radiocomandati": "RC • ",
     }
 
-    if selected_family in aggregate_prefixes:
+    is_ps5_aggregate = selected_family == "PS5 — tutte le versioni"
+
+    if is_ps5_aggregate:
+        selected_family_data = detail[
+            detail["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+        ].copy()
+    elif selected_family in aggregate_prefixes:
         selected_family_data = detail[
             detail["Famiglia"].astype(str).str.startswith(
                 aggregate_prefixes[selected_family]
@@ -3297,7 +3303,12 @@ if selected_rows:
 
     # Lista annunci: usa tutto lo storico disponibile (max 90 giorni),
     # così la consultazione non si ferma al limite dei KPI a 30 giorni.
-    if selected_family in aggregate_prefixes:
+    if is_ps5_aggregate:
+        selected_family_listings_data = df[
+            (df["category"] == selected_category)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+        ].copy()
+    elif selected_family in aggregate_prefixes:
         selected_family_listings_data = df[
             (df["category"] == selected_category)
             & df["Famiglia"].astype(str).str.startswith(
@@ -3429,7 +3440,12 @@ if selected_rows:
 
     # Il grafico deve usare tutto lo storico disponibile della famiglia,
     # non il dataset "detail" già limitato agli ultimi 30 giorni.
-    if selected_family in aggregate_prefixes:
+    if is_ps5_aggregate:
+        historical_family_data = df[
+            (df["category"] == selected_category)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\\s)", na=False)
+        ].copy()
+    elif selected_family in aggregate_prefixes:
         historical_family_data = df[
             (df["category"] == selected_category)
             & df["Famiglia"].astype(str).str.startswith(
