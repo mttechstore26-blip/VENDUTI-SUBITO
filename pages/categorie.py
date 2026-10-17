@@ -226,13 +226,40 @@ def detect_family(title, category=None):
     if re.search(r"\b(?:ps|playstation)\s*portal\b", text):
         return "PlayStation Portal"
 
+    # PS5: separa generazione e lettore soltanto con indizi espliciti.
+    # Un annuncio "PS5" o "PS5 Digital" da solo non identifica la Fat.
+    if re.search(r"\bps5\b|\bplaystation\s*5\b", text):
+        if re.search(r"\bpro\b", text):
+            return "PS5 Pro"
+
+        slim = bool(re.search(r"\bslim\b|cfi\s*20\d{2}|cfi\s*21\d{2}", text))
+        fat = bool(re.search(r"\bfat\b|\bchassis\s*[abc]\b|\bprimo\s+modello\b|cfi\s*1[012]\d{2}", text))
+        digital = bool(re.search(
+            r"\bdigital(?:\s+edition)?\b|\bdigitale\b|\bsenza\s+(?:lettore|disco|dischi)\b|"
+            r"\bno\s+disc\b|\bdisc\s*free\b",
+            text,
+        ))
+        disc = bool(re.search(
+            r"\b(?:con|dotata\s+di|versione)\s+(?:il\s+)?lettore\b|"
+            r"\b(?:lettore\s+dischi|lettore\s+blu\s*ray)\b|"
+            r"\b(?:disc|disk)\s+edition\b|\bstandard\s+edition\b|"
+            r"\bversione\s+(?:disco|dischi)\b",
+            text,
+        ))
+        # Segnali contraddittori: evita classificazioni arbitrarie.
+        if (slim and fat) or (digital and disc):
+            return "PS5 • Modello non identificato"
+        if slim:
+            return "PS5 Slim Digital" if digital else (
+                "PS5 Slim Standard" if disc else "PS5 Slim • Lettore non identificato"
+            )
+        if fat:
+            return "PS5 Fat Digital" if digital else (
+                "PS5 Fat Standard" if disc else "PS5 Fat • Lettore non identificato"
+            )
+        return "PS5 • Modello non identificato"
+
     console_patterns = [
-        # PlayStation 5: per il sourcing raggruppiamo per generazione hardware.
-        # Digital / disco della PS5 base confluiscono in PS5.
-        # Digital / disco della Slim confluiscono in PS5 Slim.
-        (r"\b(?:ps5|playstation\s*5)\b.*\bpro\b", "PS5 Pro"),
-        (r"\b(?:ps5|playstation\s*5)\b.*\bslim\b", "PS5 Slim"),
-        (r"\bps5\b|\bplaystation\s*5\b", "PS5"),
         (r"\b(?:ps4|playstation\s*4)\b.*\bpro\b", "PS4 Pro"),
         (r"\bps4\b|\bplaystation\s*4\b", "PS4"),
         (r"\bxbox\s*series\s*x\b", "Xbox Series X"),
