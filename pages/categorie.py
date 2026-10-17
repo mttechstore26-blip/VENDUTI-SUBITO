@@ -241,6 +241,7 @@ def detect_family(title, category=None):
         ))
         disc = bool(re.search(
             r"\b(?:con|dotata\s+di|versione)\s+(?:il\s+)?lettore\b|"
+            r"\bcon\s+(?:il\s+)?(?:disco|dischi)\b|\bversione\s+standard\b|"
             r"\b(?:lettore\s+dischi|lettore\s+blu\s*ray)\b|"
             r"\b(?:disc|disk)\s+edition\b|\bstandard\s+edition\b|"
             r"\bversione\s+(?:disco|dischi)\b",
