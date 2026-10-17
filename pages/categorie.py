@@ -223,17 +223,39 @@ def detect_family(title, category=None):
         # Titolo iPhone senza modello identificabile.
         return "iPhone • Modello non identificato"
 
-    if re.search(r"\b(?:ps|playstation)\s*portal\b", text):
+    # Dispositivi, videogiochi e periferiche non sono console PS5.
+    if re.search(r"\b(?:ps|playstation)\s*portal\b|\bplaystation\s*5\s*portatile\b", text):
         return "PlayStation Portal"
+    if re.search(r"\b(?:psvr\s*2?|vr\s*2|playstation\s*vr\s*2?|visore\s+playstation)\b", text):
+        return "PlayStation VR"
+    if re.search(r"\b(?:logitech|logitec)\b.*\b(?:g29|g923)\b|\b(?:g29|g923)\b", text):
+        return "Logitech Volanti"
+    if re.search(r"\b(?:fanatec|volante|pedaliera|sterzo)\b", text) and re.search(r"\bps5\b|\bplaystation\s*5\b", text):
+        # Un bundle che include la console non va scambiato per una periferica.
+        if not re.search(r"\b(?:console|ps5\s+(?:fat|slim|pro|digital|disc))\b", text):
+            return "Volanti / Sim Racing"
+    if re.search(r"\b(?:dualsense|controller|joystick|joypad|pad)\b", text) and re.search(r"\bps5\b|\bplaystation\s*5\b", text):
+        if re.search(r"\b(?:solo\s+|aim\s+)?controller\b|\bdualsense\b|\bpad\s+ps5\b", text) and not re.search(r"\b(?:console|ps5\s+(?:fat|slim|pro|digital|disc)|playstation\s*5\s+(?:fat|slim|pro|digital))\b", text):
+            if not re.search(r"\bps5\s*(?:\+|con|e)\b|\bplaystation\s*5\s*(?:\+|con|e)\b", text):
+                return "Controller PS5"
+    if re.search(r"\b(?:giochi|videogiochi|lotto\s+di\s+\d+\s+giochi)\b|\b(?:ghost\s+of\s+yotei|callisto\s+protocol)\b", text):
+        if re.search(r"\bps5\b|\bplaystation\s*5\b", text) and not re.search(r"\b(?:console|ps5\s*(?:\+|con|e)\b|playstation\s*5\s*(?:\+|con|e)\b)\b", text):
+            return "Videogiochi PS5"
 
-    # PS5: separa generazione e lettore soltanto con indizi espliciti.
-    # Un annuncio "PS5" o "PS5 Digital" da solo non identifica la Fat.
+    # PS5: riconosci modello, condizione e lettore solo da indizi espliciti.
     if re.search(r"\bps5\b|\bplaystation\s*5\b", text):
+        if re.search(r"\b(?:non\s+funzionant\w*|guast\w*|difettos\w*|per\s+(?:pezzi|ricambi)|da\s+riparare|broken|defekt)\b", text):
+            return "PS5 • Guasta / ricambi"
+
+        # Bundle compositi da valutare separatamente dalle console singole.
+        if re.search(r"\b(?:monitor|volante)\b", text) and re.search(r"\b(?:\+|con|bundle|lotto)\b", text):
+            return "PS5 • Bundle misto"
+
         if re.search(r"\bpro\b", text):
             return "PS5 Pro"
 
         slim = bool(re.search(r"\bslim\b|cfi\s*20\d{2}|cfi\s*21\d{2}", text))
-        fat = bool(re.search(r"\bfat\b|\bchassis\s*[abc]\b|\bprimo\s+modello\b|cfi\s*1[012]\d{2}", text))
+        fat = bool(re.search(r"\bfat\b|\bchassis\s*[abc]\b|\bprim[ao]\s+versione\b|\bprimo\s+modello\b|cfi\s*1[012]\d{2}", text))
         digital = bool(re.search(
             r"\bdigital(?:\s+edition)?\b|\bdigitale\b|\bsenza\s+(?:lettore|disco|dischi)\b|"
             r"\bno\s+disc\b|\bdisc\s*free\b",
@@ -242,12 +264,12 @@ def detect_family(title, category=None):
         disc = bool(re.search(
             r"\b(?:con|dotata\s+di|versione)\s+(?:il\s+)?lettore\b|"
             r"\bcon\s+(?:il\s+)?(?:disco|dischi)\b|\bversione\s+standard\b|"
-            r"\b(?:lettore\s+dischi|lettore\s+blu\s*ray)\b|"
-            r"\b(?:disc|disk)\s+edition\b|\bstandard\s+edition\b|"
-            r"\bversione\s+(?:disco|dischi)\b",
+            r"\b(?:lettore\s+(?:cd|dischi|disco|blu\s*ray))\b|"
+            r"\b(?:disc|disk|disco|bluray|blu\s*ray)\s+edition\b|"
+            r"\bstandard\s+edition\b|\bversione\s+(?:disco|dischi|blu\s*ray)\b|"
+            r"\b(?:disc|disk|disco|bluray)\b",
             text,
         ))
-        # Segnali contraddittori: evita classificazioni arbitrarie.
         if (slim and fat) or (digital and disc):
             return "PS5 • Modello non identificato"
         if slim:
@@ -258,6 +280,10 @@ def detect_family(title, category=None):
             return "PS5 Fat Digital" if digital else (
                 "PS5 Fat Standard" if disc else "PS5 Fat • Lettore non identificato"
             )
+        if digital:
+            return "PS5 Digital • Generazione non identificata"
+        if disc:
+            return "PS5 Standard • Generazione non identificata"
         return "PS5 • Modello non identificato"
 
     console_patterns = [
@@ -2945,14 +2971,14 @@ family_stats = family_stats.merge(
 # Le varianti restano comunque separate nella tabella famiglie e per il prezzo d'acquisto.
 ps5_current = detail[
     detail["Famiglia"].astype(str).str.match(
-        r"^PS5(?:$|\s)",
+        r"^PS5(?:$|\s)(?!.*(?:Guasta / ricambi|Bundle misto))",
         na=False,
     )
 ].copy()
 
 ps5_previous = detail_prev[
     detail_prev["Famiglia"].astype(str).str.match(
-        r"^PS5(?:$|\s)",
+        r"^PS5(?:$|\s)(?!.*(?:Guasta / ricambi|Bundle misto))",
         na=False,
     )
 ].copy()
@@ -3310,7 +3336,7 @@ if selected_rows:
 
     if is_ps5_aggregate:
         selected_family_data = detail[
-            detail["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
+            detail["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)(?!.*(?:Guasta / ricambi|Bundle misto))", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         selected_family_data = detail[
@@ -3334,7 +3360,7 @@ if selected_rows:
     if is_ps5_aggregate:
         selected_family_listings_data = df[
             (df["category"] == selected_category)
-            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)(?!.*(?:Guasta / ricambi|Bundle misto))", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         selected_family_listings_data = df[
@@ -3471,7 +3497,7 @@ if selected_rows:
     if is_ps5_aggregate:
         historical_family_data = df[
             (df["category"] == selected_category)
-            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)", na=False)
+            & df["Famiglia"].astype(str).str.match(r"^PS5(?:$|\s)(?!.*(?:Guasta / ricambi|Bundle misto))", na=False)
         ].copy()
     elif selected_family in aggregate_prefixes:
         historical_family_data = df[
