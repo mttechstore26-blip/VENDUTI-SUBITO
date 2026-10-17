@@ -271,7 +271,7 @@ def detect_family(title, category=None):
             text,
         ))
         # "senza disco/lettore" descrive la Digital, non una versione con disco.
-        if re.search(r"\\bsenza\\s+(?:lettore|disco|dischi)\\b", text):
+        if re.search(r"\bsenza\s+(?:lettore|disco|dischi)\b", text):
             disc = False
         if (slim and fat) or (digital and disc):
             return "PS5 • Modello non identificato"
@@ -3403,6 +3403,23 @@ if selected_rows:
             "⚡ Tempo mediano",
             format_speed(famiglia_tempo_mediano),
         )
+
+    # Esporta tutti gli annunci storici della famiglia selezionata,
+    # anche quando la tabella a schermo ne mostra soltanto i primi 50.
+    export_columns = [
+        "title", "price", "url", "Famiglia",
+        "detected_sold_at", "sale_time_hours",
+    ]
+    family_export = selected_family_listings_data[
+        [col for col in export_columns if col in selected_family_listings_data.columns]
+    ].copy()
+    st.download_button(
+        "📥 Esporta tutti gli annunci della famiglia (CSV)",
+        data=family_export.to_csv(index=False).encode("utf-8-sig"),
+        file_name="venduti_subito_famiglia.csv",
+        mime="text/csv",
+        key="export_family_" + str(selected_family),
+    )
 
     family_listings = (
         selected_family_listings_data
