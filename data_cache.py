@@ -5,7 +5,7 @@ from database import get_connection
 
 
 @st.cache_data(ttl=60, show_spinner=False)
-def load_market_data():
+def load_market_data(recent_sold_days=None):
     """Carica e normalizza una sola volta i dati usati da tutta la webapp."""
     conn = get_connection()
 
@@ -26,7 +26,16 @@ def load_market_data():
             ON l.monitoring_id = m.id
     """
 
-    df = pd.read_sql_query(query, conn)
+    params = ()
+    if recent_sold_days is not None:
+        cutoff = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=recent_sold_days)).isoformat()
+        query += """
+            WHERE l.detected_sold_at IS NOT NULL
+              AND julianday(l.detected_sold_at) >= julianday(?)
+        """
+        params = (cutoff,)
+
+    df = pd.read_sql_query(query, conn, params=params)
     conn.close()
 
     if df.empty:
