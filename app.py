@@ -2,7 +2,7 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="MT TECH Market Intelligence",
+    page_title="Venduti Subito",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -349,7 +349,7 @@ trend = st.Page(
 
 pg = st.navigation(
     {
-        "MT TECH Market Intelligence": [
+        "Venduti Subito": [
             categorie,
             annunci,
             prezzi,
