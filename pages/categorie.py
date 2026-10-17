@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from data_cache import load_market_data
+from family_cache import classify_with_disk_cache
 
 
 st.markdown(
@@ -2735,10 +2736,9 @@ def prepare_data():
 
     # Usa stringhe stabili così la cache della classificazione viene riutilizzata
     # tra i rerun della pagina e tra titoli/categorie ripetuti.
-    data["Famiglia"] = [
-        detect_family(str(title or ""), str(category or ""))
-        for title, category in zip(data["title"], data["category"])
-    ]
+    data["Famiglia"] = classify_with_disk_cache(
+        data["title"], data["category"], detect_family, normalize_text
+    )
     data = apply_recurring_families(data)
     data = apply_manual_family_overrides(data)
 
