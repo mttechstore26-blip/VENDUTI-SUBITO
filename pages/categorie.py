@@ -1232,6 +1232,32 @@ def detect_family(title, category=None):
             return "NAS"
 
         # E-reader / e-paper
+        # Kindle: classifica prima modelli e generazioni, evitando che
+        # titoli generici e Signature Edition di generazione ignota si mescolino.
+        if re.search(r"\\bkindle\\b", text):
+            if re.search(r"\\bcolorsoft\\b", text):
+                if re.search(r"\\bsignature\\b", text):
+                    return "Kindle Colorsoft Signature Edition"
+                return "Kindle Colorsoft"
+            if re.search(r"\\b(?:scribe)\\b", text):
+                return "Kindle Scribe"
+            if re.search(r"\\boasis\\b", text):
+                generation = re.search(r"\\b(9|10)\\s*(?:a|th|gen|generazione)\\b", text)
+                return f"Kindle Oasis {generation.group(1)}ª gen" if generation else "Kindle Oasis"
+            if re.search(r"\\bpaper\\s*white\\b|\\bpaperwhite\\b", text):
+                generation = re.search(r"\\b(10|11|12)\\s*(?:a|th|gen|generazione)\\b", text)
+                if generation:
+                    return f"Kindle Paperwhite {generation.group(1)}ª gen"
+                if re.search(r"\\bsignature\\b", text):
+                    return "Kindle Paperwhite Signature Edition (gen. non identificata)"
+                return "Kindle Paperwhite (gen. non identificata)"
+            if re.search(r"\\bsignature\\b", text):
+                return "Kindle Signature Edition (modello non identificato)"
+            generation = re.search(r"\\b(10|11|12)\\s*(?:a|th|gen|generazione)\\b", text)
+            if generation:
+                return f"Kindle {generation.group(1)}ª gen"
+            return "Kindle (modello non identificato)"
+
         ereader_patterns = [
             (r"\bremarkable\s*2\b", "reMarkable 2"),
             (r"\bkobo\s+clara\b", "Kobo Clara"),
