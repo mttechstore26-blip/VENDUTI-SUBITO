@@ -223,6 +223,10 @@ def detect_family(title, category=None):
         # Titolo iPhone senza modello identificabile.
         return "iPhone • Modello non identificato"
 
+    # Esclusione esplicita: annunci di altre console che citano "no PS5".
+    if re.search(r"\\bxbox\\s*series\\s*x\\b", text) and re.search(r"\\bno\\s+ps5\\b", text):
+        return "Xbox Series X"
+
     # Dispositivi, videogiochi e periferiche non sono console PS5.
     if re.search(r"\b(?:ps|playstation)\s*portal\b|\bplaystation\s*5\s*portatile\b", text):
         return "PlayStation Portal"
@@ -241,6 +245,10 @@ def detect_family(title, category=None):
     if re.search(r"\b(?:giochi|videogiochi|lotto\s+di\s+\d+\s+giochi)\b|\b(?:ghost\s+of\s+yotei|callisto\s+protocol)\b", text):
         if re.search(r"\bps5\b|\bplaystation\s*5\b", text) and not re.search(r"\b(?:console|ps5\s*(?:\+|con|e)\b|playstation\s*5\s*(?:\+|con|e)\b)\b", text):
             return "Videogiochi PS5"
+
+    # Titoli di videogiochi privi di indicazioni di console in vendita.
+    if re.search(r"\\b(?:ea\\s*fc\\s*26|fifa\\s*26)\\b", text) and re.search(r"\\bps5\\b", text):
+        return "Videogiochi PS5"
 
     # PS5: riconosci modello, condizione e lettore solo da indizi espliciti.
     if re.search(r"\bps5\b|\bplaystation\s*5\b", text):
@@ -267,7 +275,7 @@ def detect_family(title, category=None):
             r"\b(?:lettore\s+(?:cd|dischi|disco|blu\s*ray))\b|"
             r"\b(?:disc|disk|disco|bluray|blu\s*ray)\s+edition\b|"
             r"\bstandard\s+edition\b|\bversione\s+(?:disco|dischi|blu\s*ray)\b|"
-            r"\b(?:disc|disk|disco|bluray)\b",
+            r"\b(?:disc|disk|disco|dischi|bluray)\b",
             text,
         ))
         # "senza disco/lettore" descrive la Digital, non una versione con disco.
