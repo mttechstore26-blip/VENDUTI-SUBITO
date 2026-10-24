@@ -3416,8 +3416,24 @@ family_table = family_stats_display[
     "Venduti_prec": "30 gg precedenti",
 }).reset_index(drop=True)
 
+def highlight_strong_growth(value):
+    """Evidenzia soltanto i trend positivi pari o superiori al 20%."""
+    try:
+        growth = float(str(value).replace("%", "").replace(",", "."))
+    except (TypeError, ValueError):
+        return ""
+    if growth >= 20:
+        return "background-color: #dcfce7; color: #166534; font-weight: bold"
+    return ""
+
+
+styled_family_table = family_table.style.map(
+    highlight_strong_growth,
+    subset=["Trend 30 gg"],
+)
+
 family_event = st.dataframe(
-    family_table,
+    styled_family_table,
     width="stretch",
     hide_index=True,
     height=420,
