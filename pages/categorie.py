@@ -10,7 +10,7 @@ from ui_style import GLOBAL_STYLE
 from family_cache import classify_with_disk_cache
 from unknown_model_taxonomy import classify_unknown_model
 from manual_family_overrides import (
-    get_overrides, save_override, delete_override, editor_authorized, listing_id,
+    get_overrides, save_override, delete_override, listing_id,
 )
 
 
@@ -3904,89 +3904,77 @@ if selected_rows:
             "la famiglia corretta. Le modifiche sono salvate per ID annuncio "
             "e aggiornano conteggi e statistiche dopo il salvataggio."
         )
-        editor_password = st.text_input(
-            "Password amministratore",
-            type="password",
-            key="subito_manual_editor_password",
-            help="Configurata sul server tramite SUBITO_EDITOR_PASSWORD.",
+        eligible = (
+            selected_family_listings_data
+            .sort_values("detected_sold_at", ascending=False)
+            .drop_duplicates(subset=["url"])
+            .copy()
         )
-        if not editor_authorized(editor_password):
-            st.info(
-                "Inserisci la password amministratore per modificare le famiglie. "
-                "Se non è stata configurata sul server, chiedi all'amministratore."
-            )
+        eligible = eligible[eligible["url"].fillna("").map(listing_id).notna()]
+        if eligible.empty:
+            st.warning("Nessun annuncio con ID valido disponibile.")
         else:
-            eligible = (
-                selected_family_listings_data
-                .sort_values("detected_sold_at", ascending=False)
-                .drop_duplicates(subset=["url"])
-                .copy()
+            options = eligible["url"].astype(str).tolist()
+            record_by_url = eligible.set_index("url").to_dict("index")
+            chosen_url = st.selectbox(
+                "Annuncio da correggere",
+                options=options,
+                format_func=lambda url: (
+                    str(record_by_url[url]["title"])[:95]
+                    + " · ID " + str(listing_id(url))
+                ),
+                key="manual_editor_listing",
             )
-            eligible = eligible[eligible["url"].fillna("").map(listing_id).notna()]
-            if eligible.empty:
-                st.warning("Nessun annuncio con ID valido disponibile.")
-            else:
-                options = eligible["url"].astype(str).tolist()
-                record_by_url = eligible.set_index("url").to_dict("index")
-                chosen_url = st.selectbox(
-                    "Annuncio da correggere",
-                    options=options,
-                    format_func=lambda url: (
-                        str(record_by_url[url]["title"])[:95]
-                        + " · ID " + str(listing_id(url))
-                    ),
-                    key="manual_editor_listing",
+            record = record_by_url[chosen_url]
+            st.markdown(f"[Apri annuncio originale su Subito]({chosen_url})")
+            st.caption(f"Famiglia attuale: {record['Famiglia']}")
+            known_families = sorted(
+                name for name in df.loc[
+                    df["category"] == selected_category, "Famiglia"
+                ].dropna().astype(str).unique()
+                if name and name != "PS5 — tutte le versioni"
+            )
+            family_options = known_families + ["➕ Crea una nuova famiglia"]
+            default_index = (
+                family_options.index(str(record["Famiglia"]))
+                if str(record["Famiglia"]) in family_options else 0
+            )
+            with st.form("manual_family_change_form"):
+                new_choice = st.selectbox(
+                    "Famiglia di destinazione",
+                    family_options,
+                    index=default_index,
                 )
-                record = record_by_url[chosen_url]
-                st.markdown(f"[Apri annuncio originale su Subito]({chosen_url})")
-                st.caption(f"Famiglia attuale: {record['Famiglia']}")
-                known_families = sorted(
-                    name for name in df.loc[
-                        df["category"] == selected_category, "Famiglia"
-                    ].dropna().astype(str).unique()
-                    if name and name != "PS5 — tutte le versioni"
+                custom_family = st.text_input(
+                    "Nome nuova famiglia (solo se selezionata sopra)",
+                    max_chars=120,
                 )
-                family_options = known_families + ["➕ Crea una nuova famiglia"]
-                default_index = (
-                    family_options.index(str(record["Famiglia"]))
-                    if str(record["Famiglia"]) in family_options else 0
+                save_clicked = st.form_submit_button(
+                    "💾 Salva assegnazione", type="primary"
                 )
-                with st.form("manual_family_change_form"):
-                    new_choice = st.selectbox(
-                        "Famiglia di destinazione",
-                        family_options,
-                        index=default_index,
-                    )
-                    custom_family = st.text_input(
-                        "Nome nuova famiglia (solo se selezionata sopra)",
-                        max_chars=120,
-                    )
-                    save_clicked = st.form_submit_button(
-                        "💾 Salva assegnazione", type="primary"
-                    )
-                if save_clicked:
-                    family_name = (
-                        custom_family.strip()
-                        if new_choice == "➕ Crea una nuova famiglia"
-                        else new_choice
-                    )
-                    if not family_name:
-                        st.error("Inserisci il nome della nuova famiglia.")
-                    else:
-                        try:
-                            save_override(chosen_url, family_name)
-                            st.success(f"Annuncio spostato in: {family_name}")
-                            st.rerun()
-                        except (ValueError, OSError, __import__("sqlite3").Error) as exc:
-                            st.error(f"Salvataggio non riuscito: {exc}")
-
-                if st.button("↩️ Rimuovi correzione manuale", key="remove_family_override"):
+            if save_clicked:
+                family_name = (
+                    custom_family.strip()
+                    if new_choice == "➕ Crea una nuova famiglia"
+                    else new_choice
+                )
+                if not family_name:
+                    st.error("Inserisci il nome della nuova famiglia.")
+                else:
                     try:
-                        delete_override(chosen_url)
-                        st.success("Ripristinata la classificazione automatica.")
+                        save_override(chosen_url, family_name)
+                        st.success(f"Annuncio spostato in: {family_name}")
                         st.rerun()
                     except (ValueError, OSError, __import__("sqlite3").Error) as exc:
-                        st.error(f"Ripristino non riuscito: {exc}")
+                        st.error(f"Salvataggio non riuscito: {exc}")
+
+            if st.button("↩️ Rimuovi correzione manuale", key="remove_family_override"):
+                try:
+                    delete_override(chosen_url)
+                    st.success("Ripristinata la classificazione automatica.")
+                    st.rerun()
+                except (ValueError, OSError, __import__("sqlite3").Error) as exc:
+                    st.error(f"Ripristino non riuscito: {exc}")
 
     st.markdown("#### 📈 Andamento prezzo")
 
