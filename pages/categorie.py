@@ -3795,7 +3795,29 @@ if selected_rows:
     # La lista annunci ora permette la selezione multipla diretta.
     # I link restano cliccabili nella colonna "Apri".
     family_listings = family_listings.reset_index(drop=True)
-    st.caption("Seleziona una o più righe per spostarle insieme. Clicca sul titolo per aprire l'annuncio.")
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    gap:14px;flex-wrap:wrap;margin:8px 0 14px;padding:15px 20px;
+                    border:1px solid rgba(37,99,235,.13);border-radius:18px;
+                    background:linear-gradient(110deg,#eff6ff 0%,#f8faff 60%,#f5f3ff 100%);
+                    box-shadow:0 8px 22px rgba(15,23,42,.035)">
+            <div>
+                <div style="font-size:1.15rem;font-weight:900;color:#172554">
+                    📦 Annunci venduti
+                </div>
+                <div style="font-size:.88rem;color:#64748b;margin-top:3px">
+                    Clicca sul titolo per aprire Subito. Seleziona le righe per spostarle insieme.
+                </div>
+            </div>
+            <div style="padding:7px 13px;border-radius:12px;color:#1d4ed8;
+                        background:#dbeafe;font-weight:850;font-size:.92rem">
+                {len(family_listings)} annunci visibili
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     listing_view = family_listings[
         ["Titolo", "Prezzo", "Venduto in", "Rilevato venduto", "Link"]
     ].copy()
@@ -3810,12 +3832,39 @@ if selected_rows:
 
     listing_view["Titolo"] = listing_view.apply(clickable_title, axis=1)
     listing_view = listing_view.drop(columns=["Link"])
+
+    # Celle leggibili e distintive, lasciando interattivo il grid Streamlit.
+    def listing_row_style(row):
+        shade = "background-color: #f8faff" if row.name % 2 else "background-color: #ffffff"
+        return [shade] * len(row)
+
+    def listing_price_style(_value):
+        return "background-color: #eaf2ff; color: #1d4ed8; font-weight: 800"
+
+    def listing_speed_style(value):
+        label = str(value)
+        if "🔥🔥🔥🔥" in label or "🔥🔥🔥" in label:
+            return "background-color: #dcfce7; color: #166534; font-weight: 800"
+        if "🔥🔥" in label:
+            return "background-color: #ecfdf5; color: #047857; font-weight: 750"
+        if "🔥" in label:
+            return "background-color: #fff7ed; color: #9a3412; font-weight: 750"
+        return "background-color: #f1f5f9; color: #475569; font-weight: 650"
+
+    styled_listing_view = (
+        listing_view.style
+        .apply(listing_row_style, axis=1)
+        .map(listing_price_style, subset=["Prezzo"])
+        .map(listing_speed_style, subset=["Venduto in"])
+        .map(lambda _: "color: #64748b; font-weight: 550", subset=["Rilevato venduto"])
+        .set_properties(**{"font-size": "16px"})
+    )
     listing_event = st.dataframe(
-        listing_view,
+        styled_listing_view,
         hide_index=True,
         width="stretch",
-        height=540,
-        row_height=42,
+        height=610,
+        row_height=49,
         column_config={
             "Titolo": st.column_config.LinkColumn("Annuncio", display_text=r"#titolo=(.*)$", width="large"),
             "Prezzo": st.column_config.TextColumn("Prezzo", width="small"),
