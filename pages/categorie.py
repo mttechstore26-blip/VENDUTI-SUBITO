@@ -3416,27 +3416,157 @@ family_table = family_stats_display[
     "Venduti_prec": "30 gg precedenti",
 }).reset_index(drop=True)
 
-def highlight_strong_growth(value):
-    """Evidenzia soltanto i trend positivi pari o superiori al 20%."""
+# Riepilogo immediato: volumi, crescita e velocità restano calcolati
+# sugli stessi dati della tabella, senza alterare conteggi o filtri.
+eligible_families = family_stats_display[
+    family_stats_display["Venduti_30gg"] >= 10
+].copy()
+growth_families = eligible_families[
+    eligible_families["Trend_volume_%"].notna()
+].sort_values("Trend_volume_%", ascending=False)
+speed_families = eligible_families[
+    eligible_families["Tempo_mediano_ore"].notna()
+].sort_values("Tempo_mediano_ore")
+
+st.markdown(
+    """
+    <style>
+    .mt-family-card {
+        min-height: 122px;
+        border: 1px solid rgba(99, 102, 241, 0.13);
+        border-radius: 20px;
+        padding: 18px 20px;
+        background: linear-gradient(150deg, #fff 0%, #f7faff 100%);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    }
+    .mt-family-card.blue { background: linear-gradient(130deg, #eff6ff, #ffffff); }
+    .mt-family-card.green { background: linear-gradient(130deg, #ecfdf5, #ffffff); }
+    .mt-family-card.violet { background: linear-gradient(130deg, #f5f3ff, #ffffff); }
+    .mt-family-card .eyebrow {
+        color: #64748b; font-size: 0.80rem; font-weight: 800;
+        letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .mt-family-card .headline {
+        color: #0f172a; font-size: 1.24rem; font-weight: 900;
+        margin-top: 8px; line-height: 1.2;
+    }
+    .mt-family-card .footnote {
+        color: #475569; font-size: 0.82rem; margin-top: 7px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def family_insight_card(label, headline, footnote, tone):
+    st.markdown(
+        f'<div class="mt-family-card {tone}">'
+        f'<div class="eyebrow">{escape(str(label))}</div>'
+        f'<div class="headline">{escape(str(headline))}</div>'
+        f'<div class="footnote">{escape(str(footnote))}</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+top_family = family_stats_display.iloc[0]
+insight_columns = st.columns(3, gap="medium")
+with insight_columns[0]:
+    family_insight_card(
+        "🏆 Più venduta",
+        top_family["Famiglia"],
+        f'{int(top_family["Venduti"])} venduti nello storico',
+        "blue",
+    )
+with insight_columns[1]:
+    if not growth_families.empty:
+        fastest_growth = growth_families.iloc[0]
+        family_insight_card(
+            "📈 Crescita più forte",
+            fastest_growth["Famiglia"],
+            f'{format_delta(fastest_growth["Trend_volume_%"])} · almeno 10 venduti in 30 gg',
+            "green",
+        )
+    else:
+        family_insight_card("📈 Crescita più forte", "Dati insufficienti",
+                            "Servono almeno 10 venduti in 30 gg", "green")
+with insight_columns[2]:
+    if not speed_families.empty:
+        quickest = speed_families.iloc[0]
+        family_insight_card(
+            "⚡ Vendita più rapida",
+            quickest["Famiglia"],
+            f'{format_duration(quickest["Tempo_mediano_ore"])} · almeno 10 venduti in 30 gg',
+            "violet",
+        )
+    else:
+        family_insight_card("⚡ Vendita più rapida", "Dati insufficienti",
+                            "Servono almeno 10 venduti in 30 gg", "violet")
+
+st.caption(
+    "Seleziona una riga per aprire gli annunci. "
+    "Il totale usa lo storico disponibile; i due periodi del trend sono di 30 giorni ciascuno."
+)
+
+
+def style_family_name(_value):
+    return "color: #0f172a; font-weight: bold"
+
+
+def style_total_sales(value):
+    intensity = float(value) / max(1, float(family_table["Venduti totali"].max()))
+    alpha = 0.05 + 0.17 * intensity
+    return (
+        f"background-color: rgba(37, 99, 235, {alpha:.3f}); "
+        "color: #1d4ed8; font-weight: bold"
+    )
+
+
+def style_recent_sales(value):
+    intensity = float(value) / max(1, float(family_table["Ultimi 30 gg"].max()))
+    alpha = 0.04 + 0.12 * intensity
+    return f"background-color: rgba(14, 165, 233, {alpha:.3f}); font-weight: bold"
+
+
+def style_trend(value):
     try:
         growth = float(str(value).replace("%", "").replace(",", "."))
     except (TypeError, ValueError):
         return ""
     if growth >= 20:
-        return "background-color: #dcfce7; color: #166534; font-weight: bold"
-    return ""
+        return "background-color: #bbf7d0; color: #14532d; font-weight: bold"
+    if growth > 0:
+        return "background-color: #ecfdf5; color: #047857; font-weight: bold"
+    if growth <= -20:
+        return "background-color: #ffe4e6; color: #9f1239; font-weight: bold"
+    if growth < 0:
+        return "background-color: #fff1f2; color: #be123c"
+    return "color: #64748b"
 
 
-styled_family_table = family_table.style.map(
-    highlight_strong_growth,
-    subset=["Trend 30 gg"],
+styled_family_table = (
+    family_table.style
+    .map(style_family_name, subset=["Famiglia"])
+    .map(style_total_sales, subset=["Venduti totali"])
+    .map(style_recent_sales, subset=["Ultimi 30 gg"])
+    .map(style_trend, subset=["Trend 30 gg"])
 )
 
 family_event = st.dataframe(
     styled_family_table,
     width="stretch",
     hide_index=True,
-    height=420,
+    height=500,
+    column_config={
+        "Famiglia": st.column_config.TextColumn("Famiglia / modello", width="medium"),
+        "Venduti totali": st.column_config.NumberColumn("Venduti totali", help="Tutto lo storico disponibile"),
+        "Ultimi 30 gg": st.column_config.NumberColumn("Ultimi 30 gg", help="Venduti rilevati negli ultimi 30 giorni"),
+        "30 gg precedenti": st.column_config.NumberColumn("30 gg precedenti", help="Venduti rilevati tra 60 e 30 giorni fa"),
+        "Trend 30 gg": st.column_config.TextColumn("Trend 30 gg", help="Variazione percentuale degli ultimi 30 giorni rispetto ai 30 precedenti"),
+        "Prezzo": st.column_config.TextColumn("Prezzo mediano"),
+        "Tempo vendita": st.column_config.TextColumn("Tempo mediano"),
+    },
     on_select="rerun",
     selection_mode="single-row",
 )
