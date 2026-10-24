@@ -169,6 +169,93 @@ def detect_family(title, category=None):
     text = normalize_text(title)
     category_text = normalize_text(category or "")
 
+    # Console 120–350: modelli realmente identificabili dai titoli esportati.
+    # Le periferiche e i videogiochi hanno famiglie separate dalle console.
+    # Si applica ai monitor Console standard, escluso il monitor premium 400+.
+    if (
+        "console" in category_text
+        and "console 400" not in category_text
+    ):
+        console_120_patterns = [
+            # Periferiche specifiche (prima delle console: evita falsi positivi).
+            (r"\b(?:thrustmaster|thurstmaster)\b.*\bt\s*500\s*rs\b", "Sim Racing • Thrustmaster T500RS"),
+            (r"\bmoza\b.*\bcrp\s*2\b", "Sim Racing • MOZA CRP2"),
+            (r"\bmoza\b.*\br\s*12\b", "Sim Racing • MOZA R12"),
+            (r"\bmoza\b.*\br\s*5\b", "Sim Racing • MOZA R5"),
+            (r"\bmoza\b.*\br\s*3\b", "Sim Racing • MOZA R3"),
+            (r"\bmoza\b.*\bhgp\b", "Sim Racing • MOZA HGP"),
+            (r"\bmoza\b.*\bsrp\s*2\b", "Sim Racing • MOZA SRP2"),
+            (r"\bmoza\b.*\b(?:gs|ks)\b", "Sim Racing • MOZA Volanti"),
+            (r"\bsimagic\b.*\b(?:ds\s*8x|ds8x)\b", "Sim Racing • Simagic DS-8X"),
+            (r"\bsimagic\b.*\bp\s*700\b", "Sim Racing • Simagic P700"),
+            (r"\bsimagic\b", "Sim Racing • Simagic Volanti"),
+            (r"\bcammus\b.*\bc\s*5\b", "Sim Racing • Cammus C5"),
+            (r"\bcube\s*controls?\b|\bcubecontrol\b", "Sim Racing • Cube Controls"),
+            (r"\bhoneycomb\b.*\bbravo\b", "Flight Sim • Honeycomb Bravo"),
+            (r"\bhoneycomb\b.*\balpha\b", "Flight Sim • Honeycomb Alpha"),
+            (r"\bhoneycomb\b", "Flight Sim • Honeycomb Controller"),
+            (r"\b(?:winctrl|winwing)\b", "Flight Sim • WinCTRL / Winwing"),
+            (r"\b(?:pioneer\b.*\bflx\s*4\b|ddj\s*flx\s*4\b)", "DJ • Pioneer DDJ-FLX4"),
+            (r"\bhercules\b.*\binpulse\s*500\b", "DJ • Hercules Inpulse 500"),
+            (r"\b(?:scuf\b|dual\s*sense\b|dualsense\b|joystick\s+edge\b|mcon\s+controller\b)", "Controller • Gaming"),
+            (r"\b(?:radiomaster|radiocomando|radio\s*comando|dji\s*rc\s*2|goggles\s*n3)\b", "Droni • Radiocomandi / visori"),
+            (r"\b(?:playseat|pedaliera|volante|simracing|shifter|cockpit)\b", "Sim Racing • Accessori"),
+            # VR: modelli e generazioni distinte.
+            (r"\b(?:meta\s*)?quest\s*3s\b|\boculus\s*3s\b", "VR • Meta Quest 3S"),
+            (r"\bpico\s*(?:4|iv)\b", "VR • Pico 4"),
+            (r"\bhtc\s*vive\s*pro\b", "VR • HTC Vive Pro"),
+            (r"\bps\s*vr\b|\bplaystation\s*vr\b", "PlayStation VR"),
+            (r"\boculus\b|\bvisore\b", "VR • Modello non identificato"),
+            # Console portatili Android / cloud.
+            (r"\banbernic\b.*\brg\s*477\s*m\b", "Handheld • Anbernic RG477M"),
+            (r"\banbernic\b.*\brg\s*477\s*v\b", "Handheld • Anbernic RG477V"),
+            (r"\banbernic\b.*\brg\s*557\b", "Handheld • Anbernic RG557"),
+            (r"\bodin\s*2\s*portal\b", "Handheld • AYN Odin 2 Portal"),
+            (r"\b(?:logitech|logistich)\s*g\s*cloud\b", "Handheld • Logitech G Cloud"),
+            # Sony: PS Portal non è PS5; varianti PSP e Vita.
+            (r"\b(?:plastation|playstation|ps)\s*portal\b|\bps\s*portat\b|\bportal\s+nuova\b", "PlayStation Portal"),
+            (r"\bpsp\s*3004\b", "PSP 3004"),
+            (r"\bpsp\s*1000\b", "PSP 1000"),
+            (r"\bpsp\s*vita\b|\bps\s*vita\b|\bpsvita\b", "PlayStation Vita"),
+            (r"\bps\s*one\b", "PlayStation 1"),
+            (r"\bps3\s*slim\b", "PS3 Slim"),
+            (r"\bps4\s*pro\b", "PS4 Pro"),
+            (r"\bplay\s*stasion\s*5\b.*\bcon\s*disco\b", "PS5 Standard • Generazione non identificata"),
+            # Nintendo e retro, con priorità ai modelli specifici.
+            (r"\bnew\s*3ds\b", "Nintendo New 3DS"),
+            (r"\bwii\s*u\b", "Nintendo Wii U"),
+            (r"\bwii\s+rossa\b", "Nintendo Wii"),
+            (r"\bgame\s*boy\s*color\b|\bgameboy\s*color\b", "Nintendo Game Boy Color"),
+            (r"\bsnes\b", "Nintendo SNES"),
+            (r"\bnes\s+originale\b", "Nintendo NES"),
+            (r"\bsega\s+master\s+system\b", "SEGA Master System"),
+            (r"\bmattel\s+intellivision\b", "Mattel Intellivision"),
+            (r"\batari\s*2600\b.*\bconsole\b|\bconsolle\s+atari\s*2600\b", "Atari 2600"),
+            (r"\bamiga\s*600\b", "Commodore Amiga 600"),
+            (r"\bcommodore\s*64\b.*\banno\b", "Commodore 64"),
+            # Console identificata da un errore ortografico univoco.
+            (r"\bxbob\s+(?:series|serie)\s+s\b", "Xbox Series S"),
+        ]
+        for pattern, family in console_120_patterns:
+            if re.search(pattern, text):
+                return family
+
+        # Videogiochi/lotto giochi: non contare come console.
+        if re.search(
+            r"\b(?:lotto\s+\d+\s+giochi|lotto\s+videogiochi|"
+            r"videogiochi|giochi\s+(?:ps1|wii\s*u|pokemon)|"
+            r"god\s+of\s+war\s+collection|silent\s+hill|"
+            r"dragon\s+quest|medievil|dino\s+crisis|"
+            r"metal\s+gear\s+solid|castlevania|kuon\s+ps2|"
+            r"pokemon\s+(?:esmerald|esploratori|bianca)|"
+            r"demons\s+souls|monkey\s+island|"
+            r"call\s+of\s+duty\s+modern\s+warfare)\b",
+            text,
+        ):
+            return "Videogiochi • Giochi / lotti"
+        # Titoli generici (console, Play Slim, PSP 5...) restano non identificati.
+        # Non dedurre il modello dal prezzo o dalla sola parola "console".
+
     # Logitech G29: unifica tutte le varianti dello stesso volante.
     if re.search(r"\blogitech\b.*\bg29\b|\bg29\b.*\blogitech\b", text):
         return "Logitech G29"
