@@ -24,6 +24,22 @@ class ManualFamilyOverridesTests(unittest.TestCase):
                 m.delete_override(url)
                 self.assertEqual(m.get_overrides(), {})
 
+    def test_bulk_save_is_atomic(self):
+        urls = [
+            "https://www.subito.it/videogiochi/xbox-console-659976708.htm",
+            "https://www.subito.it/videogiochi/xbox-setie-s-659257097.htm",
+        ]
+        with tempfile.TemporaryDirectory() as tempdir:
+            with patch.object(m, "DATABASE_PATH", Path(tempdir) / "manual.sqlite"):
+                self.assertEqual(m.save_overrides(urls, "Xbox Series S"), 2)
+                self.assertEqual(m.get_overrides(), {
+                    "659976708": "Xbox Series S",
+                    "659257097": "Xbox Series S",
+                })
+                with self.assertRaises(ValueError):
+                    m.save_overrides(urls + ["not-a-subito-url"], "Xbox Series X")
+                self.assertEqual(m.get_overrides()["659976708"], "Xbox Series S")
+
     def test_empty_family_is_rejected(self):
         with self.assertRaises(ValueError):
             m.save_override("https://www.subito.it/fotografia/prodotto-665258336.htm", "")
