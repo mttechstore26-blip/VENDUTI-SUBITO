@@ -3795,16 +3795,21 @@ if selected_rows:
     # La lista annunci ora permette la selezione multipla diretta.
     # I link restano cliccabili nella colonna "Apri".
     family_listings = family_listings.reset_index(drop=True)
-    st.caption("Seleziona una o più righe per spostare gli annunci insieme. Usa 🔗 Apri per verificarli su Subito.")
+    st.caption("Seleziona una o più righe per spostarle insieme. Clicca sul titolo per aprire l'annuncio.")
     listing_view = family_listings[
         ["Titolo", "Prezzo", "Venduto in", "Rilevato venduto", "Link"]
     ].copy()
-    listing_view["Apri"] = listing_view["Link"]
+    # Il frammento URL contiene solo l'etichetta visualizzata: non cambia
+    # la destinazione dell'annuncio. Le correzioni usano gli URL originali.
+    def clickable_title(row):
+        url = str(row["Link"] or "").strip()
+        if not url.startswith(("https://", "http://")):
+            return ""
+        title = str(row["Titolo"] or "").replace("#", " ").replace("\n", " ").strip()
+        return f"{url}#titolo={title}"
+
+    listing_view["Titolo"] = listing_view.apply(clickable_title, axis=1)
     listing_view = listing_view.drop(columns=["Link"])
-    listing_view = listing_view.style.map(
-        lambda _: "color: #075ca9; font-weight: 750",
-        subset=["Titolo"],
-    )
     listing_event = st.dataframe(
         listing_view,
         hide_index=True,
@@ -3812,11 +3817,10 @@ if selected_rows:
         height=540,
         row_height=42,
         column_config={
-            "Titolo": st.column_config.TextColumn("Annuncio", width="large"),
+            "Titolo": st.column_config.LinkColumn("Annuncio", display_text=r"#titolo=(.*)$", width="large"),
             "Prezzo": st.column_config.TextColumn("Prezzo", width="small"),
             "Venduto in": st.column_config.TextColumn("Venduto in", width="small"),
             "Rilevato venduto": st.column_config.TextColumn("Rilevato venduto", width="medium"),
-            "Apri": st.column_config.LinkColumn("🔗 Apri", display_text="Apri ↗", width="small"),
         },
         on_select="rerun",
         selection_mode="multi-row",
