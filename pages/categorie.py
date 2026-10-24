@@ -2842,6 +2842,66 @@ if df.empty:
     st.stop()
 
 
+# Audit globale: esporta tutti i titoli che la dashboard stessa continua
+# a chiamare non identificati / non riconosciuti, su ogni categoria monitorata.
+# È un'operazione di sola lettura e non modifica né DB né classificazioni.
+with st.expander("🧩 Audit globale — modelli non identificati", expanded=False):
+    unknown_mask = df["Famiglia"].astype(str).str.contains(
+        r"non identificat|non riconosciut",
+        case=False,
+        regex=True,
+        na=False,
+    )
+    unknown_data = df.loc[unknown_mask].copy()
+    st.caption(
+        "Tutte le categorie, ultimi 90 giorni disponibili. "
+        "I filtri sono gli stessi della tabella Brand / famiglie / modelli: "
+        "annunci venduti con tempo di vendita fino a 10 giorni."
+    )
+    if unknown_data.empty:
+        st.success("Nessun annuncio ancora non identificato.")
+    else:
+        per_category = (
+            unknown_data.groupby("category", dropna=False)
+            .size()
+            .sort_values(ascending=False)
+            .rename("Non identificati")
+            .reset_index()
+            .rename(columns={"category": "Categoria"})
+        )
+        left, right = st.columns([1, 2])
+        with left:
+            st.metric("Annunci da classificare", len(unknown_data))
+            st.metric("Categorie coinvolte", unknown_data["category"].nunique())
+        with right:
+            st.dataframe(per_category, hide_index=True, height=230, width="stretch")
+
+        audit_columns = [
+            "category", "Famiglia", "title", "price", "url",
+            "detected_sold_at", "sale_time_hours",
+        ]
+        audit_export = (
+            unknown_data[audit_columns]
+            .rename(columns={
+                "category": "Categoria",
+                "title": "Titolo",
+                "price": "Prezzo",
+                "url": "Link",
+                "detected_sold_at": "Rilevato venduto",
+                "sale_time_hours": "Venduto in ore",
+            })
+            .sort_values(["Categoria", "Famiglia", "Titolo"])
+        )
+        st.download_button(
+            "📥 Esporta tutti i non identificati (CSV)",
+            data=audit_export.to_csv(index=False).encode("utf-8-sig"),
+            file_name="venduti_subito_tutti_non_identificati.csv",
+            mime="text/csv",
+            key="export_all_unidentified",
+        )
+
+
+
 now = pd.Timestamp.now(tz="UTC")
 current_start = now - pd.Timedelta(days=30)
 previous_start = now - pd.Timedelta(days=60)
