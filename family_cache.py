@@ -4,6 +4,8 @@ import inspect
 import sqlite3
 from pathlib import Path
 
+from unknown_model_taxonomy import RULES as UNKNOWN_MODEL_RULES
+
 CACHE_PATH = Path(__file__).resolve().parent / ".cache" / "families.sqlite"
 
 
@@ -15,7 +17,8 @@ def classify_with_disk_cache(titles, categories, classifier, normalizer):
         return []
     version = hashlib.sha256(
         (inspect.getsource(classifier.__wrapped__ if hasattr(classifier, "__wrapped__") else classifier)
-         + inspect.getsource(normalizer.__wrapped__ if hasattr(normalizer, "__wrapped__") else normalizer)).encode()
+         + inspect.getsource(normalizer.__wrapped__ if hasattr(normalizer, "__wrapped__") else normalizer)
+         + repr(UNKNOWN_MODEL_RULES)).encode()
     ).hexdigest()[:20]
     keys = [hashlib.sha256((version + "\0" + t + "\0" + c).encode()).hexdigest()
             for t, c in pairs]
