@@ -317,12 +317,16 @@ def detect_family(title, category=None):
         # Titolo iPhone senza modello identificabile.
         return "iPhone • Modello non identificato"
 
-    # Esclusione esplicita: annunci di altre console che citano "no PS5".
-    if re.search(r"\\bxbox\\s*series\\s*x\\b", text) and re.search(r"\\bno\\s+ps5\\b", text):
-        return "Xbox Series X"
+    # "NO PS5" è una negazione, non identifica la console venduta.
+    if re.search(r"\bno\s+ps5\b", text):
+        if re.search(r"\bxbox\s*series\s*x\b", text):
+            return "Xbox Series X"
+        if re.search(r"\bplaystation\s*2\b", text):
+            return "PS2 • Guasta / ricambi" if re.search(r"\bdisassemblat|\brott|\bguast", text) else "PS2"
+
 
     # Dispositivi, videogiochi e periferiche non sono console PS5.
-    if re.search(r"\b(?:ps|playstation)\s*portal\b|\bplaystation\s*5\s*portatile\b", text):
+    if re.search(r"\b(?:ps|ps5|playstation)\s*portal\b|\bplaystation\s*5\s*portatile\b", text):
         return "PlayStation Portal"
     if re.search(r"\b(?:psvr\s*2?|vr\s*2|playstation\s*vr\s*2?|visore\s+playstation)\b", text):
         return "PlayStation VR"
@@ -346,7 +350,7 @@ def detect_family(title, category=None):
 
     # PS5: riconosci modello, condizione e lettore solo da indizi espliciti.
     if re.search(r"\bps5\b|\bplaystation\s*5\b", text):
-        if re.search(r"\b(?:non\s+funzionant\w*|guast\w*|difettos\w*|per\s+(?:pezzi|ricambi)|da\s+riparare|broken|defekt)\b", text):
+        if re.search(r"\b(?:non\s+funzionant\w*|guast\w*|difettos\w*|per\s+(?:pezzi|ricambi)|da\s+riparare|broken|defekt|hdmi\s+rott\w*|cpu\s+gust\w*|led\s+blu\s+lampeggiant\w*|non\s+testat\w*)\b", text):
             return "PS5 • Guasta / ricambi"
 
         # Bundle compositi da valutare separatamente dalle console singole.
