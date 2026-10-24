@@ -10,7 +10,7 @@ from ui_style import GLOBAL_STYLE
 from family_cache import classify_with_disk_cache
 from unknown_model_taxonomy import classify_unknown_model
 from manual_family_overrides import (
-    get_overrides, save_override, delete_override, listing_id,
+    get_overrides, save_override, save_overrides, delete_override, listing_id,
 )
 
 
@@ -3792,59 +3792,47 @@ if selected_rows:
         }
     )
 
-    rows = []
-    for _, row in family_listings.iterrows():
-        titolo = escape(str(row["Titolo"]))
-        prezzo = escape(str(row["Prezzo"]))
-        venduto_in = escape(str(row["Venduto in"]))
-        rilevato = escape(str(row["Rilevato venduto"]))
-        link = str(row["Link"]).strip() if pd.notna(row["Link"]) else ""
-
-        if link.startswith("http://") or link.startswith("https://"):
-            titolo_html = (
-                f'<a href="{escape(link, quote=True)}" target="_blank" '
-                f'style="font-weight:700;text-decoration:none">{titolo}</a>'
-            )
-        else:
-            titolo_html = titolo
-
-        rows.append(
-            "<tr>"
-            f"<td>{titolo_html}</td>"
-            f"<td>{prezzo}</td>"
-            f"<td>{venduto_in}</td>"
-            f"<td>{rilevato}</td>"
-            "</tr>"
-        )
-
-    st.markdown(
-        """
-        <div style="overflow-x:auto;max-height:520px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
-            <thead>
-                <tr>
-                    <th style="text-align:left;padding:10px">Titolo</th>
-                    <th style="text-align:left;padding:10px">Prezzo</th>
-                    <th style="text-align:left;padding:10px">Venduto in</th>
-                    <th style="text-align:left;padding:10px">Rilevato venduto</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
-        + "".join(rows)
-        + """
-            </tbody>
-        </table>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # La lista annunci ora permette la selezione multipla diretta.
+    # I link restano cliccabili nella colonna "Apri".
+    family_listings = family_listings.reset_index(drop=True)
+    st.caption("Seleziona una o più righe per spostare gli annunci insieme. Usa 🔗 Apri per verificarli su Subito.")
+    listing_view = family_listings[
+        ["Titolo", "Prezzo", "Venduto in", "Rilevato venduto", "Link"]
+    ].copy()
+    listing_view["Apri"] = listing_view["Link"]
+    listing_view = listing_view.drop(columns=["Link"])
+    listing_view = listing_view.style.map(
+        lambda _: "color: #075ca9; font-weight: 750",
+        subset=["Titolo"],
     )
+    listing_event = st.dataframe(
+        listing_view,
+        hide_index=True,
+        width="stretch",
+        height=540,
+        row_height=42,
+        column_config={
+            "Titolo": st.column_config.TextColumn("Annuncio", width="large"),
+            "Prezzo": st.column_config.TextColumn("Prezzo", width="small"),
+            "Venduto in": st.column_config.TextColumn("Venduto in", width="small"),
+            "Rilevato venduto": st.column_config.TextColumn("Rilevato venduto", width="medium"),
+            "Apri": st.column_config.LinkColumn("🔗 Apri", display_text="Apri ↗", width="small"),
+        },
+        on_select="rerun",
+        selection_mode="multi-row",
+        key=f"family_bulk_listing_selection_{selected_category}_{selected_family}",
+    )
+    selected_listing_indices = list(listing_event.selection.rows) if listing_event else []
+    selected_listing_rows = family_listings.iloc[selected_listing_indices].copy() if selected_listing_indices else family_listings.iloc[:0].copy()
+    selected_listing_urls = selected_listing_rows["Link"].dropna().astype(str).tolist()
 
-    with st.expander("✏️ Sposta un annuncio in un'altra famiglia", expanded=False):
+    with st.expander(
+        "✏️ Sposta gli annunci selezionati in un'altra famiglia",
+        expanded=bool(selected_listing_urls),
+    ):
         st.caption(
-            "Apri l'annuncio da questa tabella, verifica il modello e assegna "
-            "la famiglia corretta. Le modifiche sono salvate per ID annuncio "
-            "e aggiornano conteggi e statistiche dopo il salvataggio."
+            "Seleziona le righe direttamente nella tabella sopra, poi scegli "
+            "la famiglia di destinazione. Tutti gli ID saranno salvati insieme."
         )
         eligible = (
             selected_family_listings_data
@@ -3856,20 +3844,31 @@ if selected_rows:
         if eligible.empty:
             st.warning("Nessun annuncio con ID valido disponibile.")
         else:
-            options = eligible["url"].astype(str).tolist()
-            record_by_url = eligible.set_index("url").to_dict("index")
-            chosen_url = st.selectbox(
-                "Annuncio da correggere",
-                options=options,
-                format_func=lambda url: (
-                    str(record_by_url[url]["title"])[:95]
-                    + " · ID " + str(listing_id(url))
-                ),
-                key="manual_editor_listing",
-            )
-            record = record_by_url[chosen_url]
-            st.markdown(f"[Apri annuncio originale su Subito]({chosen_url})")
-            st.caption(f"Famiglia attuale: {record['Famiglia']}")
+            if selected_listing_urls:
+                target_urls = [url for url in selected_listing_urls if listing_id(url)]
+                st.success(f"**{len(target_urls)} annunci selezionati** per lo spostamento.")
+                st.dataframe(
+                    selected_listing_rows[["Titolo", "Prezzo"]],
+                    hide_index=True,
+                    width="stretch",
+                    height=min(300, 43 * (len(target_urls) + 1)),
+                )
+            else:
+                st.info("Puoi selezionare più righe nella tabella, oppure correggere un annuncio singolo qui.")
+                options = eligible["url"].astype(str).tolist()
+                record_by_url = eligible.set_index("url").to_dict("index")
+                chosen_url = st.selectbox(
+                    "Annuncio da correggere",
+                    options=options,
+                    format_func=lambda url: (
+                        str(record_by_url[url]["title"])[:95]
+                        + " · ID " + str(listing_id(url))
+                    ),
+                    key="manual_editor_listing",
+                )
+                st.markdown(f"[Apri annuncio originale su Subito]({chosen_url})")
+                target_urls = [chosen_url]
+
             known_families = sorted(
                 name for name in df.loc[
                     df["category"] == selected_category, "Famiglia"
@@ -3878,8 +3877,8 @@ if selected_rows:
             )
             family_options = known_families + ["➕ Crea una nuova famiglia"]
             default_index = (
-                family_options.index(str(record["Famiglia"]))
-                if str(record["Famiglia"]) in family_options else 0
+                family_options.index(str(selected_family))
+                if str(selected_family) in family_options else 0
             )
             with st.form("manual_family_change_form"):
                 new_choice = st.selectbox(
@@ -3892,7 +3891,9 @@ if selected_rows:
                     max_chars=120,
                 )
                 save_clicked = st.form_submit_button(
-                    "💾 Salva assegnazione", type="primary"
+                    f"💾 Sposta {len(target_urls)} annunci" if len(target_urls) > 1
+                    else "💾 Salva assegnazione",
+                    type="primary",
                 )
             if save_clicked:
                 family_name = (
@@ -3904,16 +3905,17 @@ if selected_rows:
                     st.error("Inserisci il nome della nuova famiglia.")
                 else:
                     try:
-                        save_override(chosen_url, family_name)
-                        st.success(f"Annuncio spostato in: {family_name}")
+                        count = save_overrides(target_urls, family_name)
+                        st.success(f"{count} annunci spostati in: {family_name}")
                         st.rerun()
                     except (ValueError, OSError, __import__("sqlite3").Error) as exc:
                         st.error(f"Salvataggio non riuscito: {exc}")
 
-            if st.button("↩️ Rimuovi correzione manuale", key="remove_family_override"):
+            if st.button("↩️ Rimuovi correzioni manuali dalla selezione", key="remove_family_override"):
                 try:
-                    delete_override(chosen_url)
-                    st.success("Ripristinata la classificazione automatica.")
+                    for url in target_urls:
+                        delete_override(url)
+                    st.success("Ripristinata la classificazione automatica per la selezione.")
                     st.rerun()
                 except (ValueError, OSError, __import__("sqlite3").Error) as exc:
                     st.error(f"Ripristino non riuscito: {exc}")
