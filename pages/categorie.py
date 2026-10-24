@@ -6,8 +6,11 @@ import pandas as pd
 import streamlit as st
 
 from data_cache import load_market_data
+from ui_style import GLOBAL_STYLE
 from family_cache import classify_with_disk_cache
 
+
+st.markdown(GLOBAL_STYLE, unsafe_allow_html=True)
 
 st.markdown(
     """
@@ -3306,6 +3309,7 @@ st.markdown("### 🧩 Brand / famiglie / modelli")
 # non soltanto gli ultimi 30 giorni. Le metriche recenti restano separate nel
 # campo "Trend 30 gg" e nella sezione Cash Cow.
 family_stats_display = family_stats.copy()
+family_stats_display["Venduti_30gg"] = family_stats_display["Venduti"].astype(int)
 
 family_history_counts = (
     df[df["category"] == selected_category]
@@ -3357,6 +3361,7 @@ if selected_category and "collezionismo" in normalize_text(selected_category):
             [{
                 "Famiglia": base_name,
                 "Venduti": venduti,
+                "Venduti_30gg": venduti,
                 "Prezzo_mediano": subset_current["price"].median(),
                 "Tempo_mediano_ore": subset_current["sale_time_hours"].median(),
                 "Venduti_prec": venduti_prec,
@@ -3393,15 +3398,23 @@ family_stats_display = family_stats_display.sort_values(
     ascending=[False, True],
 )
 
+family_stats_display["Venduti_prec"] = family_stats_display["Venduti_prec"].fillna(0).astype(int)
+
 family_table = family_stats_display[
     [
         "Famiglia",
         "Venduti",
+        "Venduti_30gg",
+        "Venduti_prec",
         "Trend 30 gg",
         "Prezzo",
         "Tempo vendita",
     ]
-].reset_index(drop=True)
+].rename(columns={
+    "Venduti": "Venduti totali",
+    "Venduti_30gg": "Ultimi 30 gg",
+    "Venduti_prec": "30 gg precedenti",
+}).reset_index(drop=True)
 
 family_event = st.dataframe(
     family_table,
