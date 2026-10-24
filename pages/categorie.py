@@ -158,6 +158,8 @@ def normalize_text(value):
         .replace("hawei", "huawei")
         .replace("asuz", "asus")
     )
+    # Conserva il suffisso "+" dei Galaxy Tab A9+/A11+ prima della pulizia.
+    text = re.sub(r"\\b(a9|a11)\\s*\\+", r"\\1 plus", text)
     text = re.sub(r"[^a-z0-9\s]", " ", text)
 
     # Corregge typo iPhone solo come parole intere.
@@ -1441,6 +1443,47 @@ def detect_family(title, category=None):
         for pattern, label in ereader_patterns:
             if re.search(pattern, text):
                 return label
+
+        # Tablet: modello esplicito prima del fallback generico "Tablet".
+        # Regole derivate dagli export Informatica: non dedurre la serie da
+        # dimensione, prezzo o memoria, e non confondere gli accessori.
+        tablet_model_patterns = [
+            (r"\blenovo\s+tab\s+p\s*12\b", "Lenovo Tab P12"),
+            (r"\blenovo\s+(?:tab\s+)?p\s*11\s+pro\s*(?:2\s*(?:nd|a|gen))?\b", "Lenovo Tab P11 Pro (2ª gen)"),
+            (r"\blenovo\s+idea\s+tab\s+pro\b", "Lenovo Idea Tab Pro"),
+            (r"\blenovo\s+(?:tab\s+)?m\s*11\b", "Lenovo Tab M11"),
+            (r"\bsamsung\b.*\b(?:galaxy\s+)?(?:tab\s+)?active\s*3\b", "Samsung Galaxy Tab Active3"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?s\s*9\s*fe\b", "Samsung Galaxy Tab S9 FE"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+|tab\s+)(?:tab\s+)?s\s*8\b", "Samsung Galaxy Tab S8"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+|tab\s+)(?:tab\s+)?s\s*6\s*lite\b", "Samsung Galaxy Tab S6 Lite"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?s\s*5\s*e\b", "Samsung Galaxy Tab S5e"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?a\s*11\s*plus\b", "Samsung Galaxy Tab A11+"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?a\s*11\b", "Samsung Galaxy Tab A11"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?a\s*9\s*plus\b", "Samsung Galaxy Tab A9+"),
+            (r"\b(?:samsung\b.*\b|galaxy\s+tab\s+)(?:tab\s+)?a\s*9\b", "Samsung Galaxy Tab A9"),
+            (r"\b(?:boox|onyx)\s+go\s*10\s*3\s*(?:gen\s*2|lumi)\b", "BOOX Go 10.3 Gen 2 Lumi"),
+            (r"\b(?:boox|onyx)\s+go\s*10\s*3\b", "BOOX Go 10.3"),
+            (r"\bhonor\s+magic\s*pad\s*2\b|\bhonor\s+magica\s*pad\s*2\b", "Honor MagicPad 2"),
+            (r"\bhonor\s+(?:tablet\s+)?pad\s*x\s*9a\b", "Honor Pad X9a"),
+            (r"\bhonor\s+(?:tablet\s+)?pad\s*10\b", "Honor Pad 10"),
+            (r"\bhonor\s+(?:tablet\s+)?pad\s*9\b", "Honor Pad 9"),
+            (r"\btcl\s+nxtpaper\s*11\s*plus\b", "TCL NXTPAPER 11 Plus"),
+            (r"\b(?:google\s+)?pixel\s+(?:google\s+)?tablet\b|\btablet\s+pixel\s+google\b", "Google Pixel Tablet"),
+        ]
+        for pattern, label in tablet_model_patterns:
+            if re.search(pattern, text):
+                return label
+
+        # Tablet con marca ma senza modello rimangono separati dalle famiglie precise.
+        if re.search(r"\btablet\b", text):
+            for marker, family in [
+                (r"\blenovo\b", "Lenovo Tab • Modello non identificato"),
+                (r"\bsamsung\b", "Samsung Galaxy Tab • Modello non identificato"),
+                (r"\btcl\b", "TCL Tab • Modello non identificato"),
+                (r"\bhonor\b", "Honor Pad • Modello non identificato"),
+            ]:
+                if re.search(marker, text):
+                    return family
 
         # Tablet / 2-in-1
         tablet_patterns = [
