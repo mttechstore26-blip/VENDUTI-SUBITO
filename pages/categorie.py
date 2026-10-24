@@ -8,6 +8,7 @@ import streamlit as st
 from data_cache import load_market_data
 from ui_style import GLOBAL_STYLE
 from family_cache import classify_with_disk_cache
+from unknown_model_taxonomy import classify_unknown_model
 
 
 st.markdown(GLOBAL_STYLE, unsafe_allow_html=True)
@@ -280,6 +281,8 @@ def detect_family(title, category=None):
             return "iPhone SE 3"
         if re.search(r"\biphone\s*xs\b", text):
             return "iPhone XS"
+        if re.search(r"\biphone\s*xr\b", text):
+            return "iPhone XR"
         if re.search(r"\biphone\s*x\b", text):
             return "iPhone X"
         if re.search(r"\biphone\s*2g\b", text):
@@ -407,16 +410,22 @@ def detect_family(title, category=None):
         if re.search(r"\bmagic\s+keyboard\b", text):
             return "iPad • Accessori"
 
+        if re.search(r"\bipad\s+(?:pro\s*11|11\s*pro)\b", text):
+            return "iPad Pro 11"
+        if re.search(r"\bipad\s+(?:pro\s*13|13\s*pro)\b", text):
+            return "iPad Pro 13"
         if re.search(r"\bipad\s+pro\b", text):
             return "iPad Pro"
+        if re.search(r"\bipad\s+air\s*5\b", text):
+            return "iPad Air 5ª gen"
         if re.search(r"\bipad\s+air\b", text):
             return "iPad Air"
         if re.search(r"\bipad\s+mini\b", text):
             return "iPad mini"
 
         # iPad A16 (modello base 2025)
-        if re.search(r"\bipad\s+a16\b", text):
-            return "iPad A16"
+        if re.search(r"\bipad\s*(?:a16|16a)\b|\bipad\b.*\b11\s*(?:gen|generazione)\b", text):
+            return "iPad 11ª gen (A16)"
 
         # Varianti testuali: 10 gen, 10th, 10ª generazione, ecc.
         generation_patterns = [
@@ -1401,9 +1410,10 @@ def detect_family(title, category=None):
                 generation = re.search(r"\b(9|10)\s*(?:a|th|gen|generazione)\b", text)
                 return f"Kindle Oasis {generation.group(1)}ª gen" if generation else "Kindle Oasis"
             if re.search(r"\bpaper\s*white\b|\bpaperwhite\b|\bkindlepaperwhite\b", text):
-                generation = re.search(r"\b(10|11|12)\s*(?:a|th|gen|generazione)\b", text)
+                generation = re.search(r"\b(10|11|12)\s*(?:a|th|gen|generazione|ediz|edizione)\b", text)
                 if generation:
-                    return f"Kindle Paperwhite {generation.group(1)}ª gen"
+                    edition = " Signature Edition" if re.search(r"\bsignature\b", text) else ""
+                    return f"Kindle Paperwhite {generation.group(1)}ª gen{edition}"
                 if re.search(r"\bsignature\b", text):
                     return "Kindle Paperwhite Signature Edition (gen. non identificata)"
                 return "Kindle Paperwhite (gen. non identificata)"
@@ -2038,7 +2048,10 @@ def detect_family(title, category=None):
             (r"\bbimby\s*tm21\b", "Bimby TM21"),
             (r"\b(?:bimby\s*)?tm\s*5\b|\bbimby\s*t\s*5\b", "Bimby TM5"),
             (r"\bbimby\s*tm6\b|\bboccale\s+tm6\b", "Bimby TM6"),
+            (r"\bbimby\b.*\b(?:affettatutto|pelapatate)\b", "Bimby • Accessori"),
             (r"\bbimby\s*tm7\b|\bboccale\s+tm7\b", "Bimby TM7"),
+            (r"\bbimby\s*friend\b", "Bimby Friend"),
+            (r"\bbimby\b.*\bsilvercrest\b", "Silvercrest Monsieur Cuisine"),
             (r"\bbimby\b", "Bimby • Modello non identificato"),
             (r"\bfolletto\s+vr7s\b", "Folletto VR7S"),
             (r"\bfolletto\s+vr300\b", "Folletto VR300"),
@@ -2478,6 +2491,12 @@ def detect_family(title, category=None):
     for pattern, label in pc_patterns:
         if re.search(pattern, text):
             return label
+
+    # Regole aggiuntive solo dopo le tassonomie principali: recupera modelli
+    # espliciti rimasti in Altro senza forzare i titoli realmente ambigui.
+    recovered = classify_unknown_model(text, category_text)
+    if recovered:
+        return recovered
 
     brands = [
         ("apple", "Apple"),
