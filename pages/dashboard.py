@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 from data_cache import load_market_data
+from ui_style import GLOBAL_STYLE
 
 
 # ---------------------------------------------------------
 # TITOLO
 # ---------------------------------------------------------
+
+st.markdown(GLOBAL_STYLE, unsafe_allow_html=True)
 
 st.markdown(
     """
