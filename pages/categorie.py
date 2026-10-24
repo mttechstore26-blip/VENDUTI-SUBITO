@@ -3638,13 +3638,15 @@ styled_family_table = (
     .map(style_total_sales, subset=["Venduti totali"])
     .map(style_recent_sales, subset=["Ultimi 30 gg"])
     .map(style_trend, subset=["Trend 30 gg"])
+    .set_properties(**{"font-size": "16px"})
 )
 
 family_event = st.dataframe(
     styled_family_table,
     width="stretch",
     hide_index=True,
-    height=500,
+    height=560,
+    row_height=44,
     column_config={
         "Famiglia": st.column_config.TextColumn("Famiglia / modello", width="medium"),
         "Venduti totali": st.column_config.NumberColumn("Venduti totali", help="Tutto lo storico disponibile"),
