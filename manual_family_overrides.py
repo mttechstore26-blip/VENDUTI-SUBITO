@@ -49,6 +49,25 @@ def save_override(url, family):
         )
 
 
+
+def save_overrides(urls, family):
+    """Assegna più annunci alla stessa famiglia con un'unica transazione."""
+    family = str(family or "").strip()
+    if not family or len(family) > 120 or any(ord(c) < 32 for c in family):
+        raise ValueError("Il nome famiglia deve avere 1-120 caratteri.")
+    ids = list(dict.fromkeys(listing_id(url) for url in urls))
+    if not ids or any(item_id is None for item_id in ids):
+        raise ValueError("La selezione contiene annunci senza ID Subito valido.")
+    with _connect() as conn:
+        conn.executemany(
+            "INSERT INTO family_overrides(listing_id, family) VALUES (?, ?) "
+            "ON CONFLICT(listing_id) DO UPDATE SET "
+            "family=excluded.family, updated_at=CURRENT_TIMESTAMP",
+            [(item_id, family) for item_id in ids],
+        )
+    return len(ids)
+
+
 def delete_override(url):
     item_id = listing_id(url)
     if not item_id:
