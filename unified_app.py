@@ -1,8 +1,8 @@
-"""MT TECH · Venduti: experimental multipage shell.
+"""MT TECH · Venduti — staging navigation.
 
-Subito pages run directly from their original files. Vinted and eBay are
-placeholders until their imports and data writes have been isolated.
-Do not replace production services before staging smoke tests.
+Each selected page runs only once. The legacy Subito app.py is not included:
+it calls st.navigation internally and would replace the unified menu.
+Vinted and eBay remain placeholders pending isolated module integration.
 """
 import streamlit as st
 
@@ -24,24 +24,30 @@ def ebay():
     st.info("Integrazione eBay in preparazione. Il servizio attuale resta invariato.")
 
 
-st.sidebar.title("MT TECH · Venduti")
-st.sidebar.caption("Anteprima sperimentale — database separati")
+platform_pages = [
+    st.Page(vinted, title="Vinted", icon="🟢", url_path="vinted"),
+    st.Page(ebay, title="eBay", icon="🔵", url_path="ebay"),
+]
+subito_pages = [
+    st.Page("pages/categorie.py", title="Categorie", icon="🎯", url_path="subito-categorie", default=True),
+    st.Page("pages/annunci.py", title="Annunci venduti", icon="📦", url_path="subito-annunci"),
+    st.Page("pages/prezzi.py", title="Analisi prezzi", icon="💰", url_path="subito-prezzi"),
+    st.Page("pages/trend.py", title="Trend", icon="📈", url_path="subito-trend"),
+    st.Page("pages/dashboard.py", title="Dashboard", icon="📊", url_path="subito-dashboard"),
+]
 
-# Streamlit executes only the selected page per rerun. The five existing
-# Subito pages continue to use data_cache, family_cache and the same SQLite.
-pages = {
-    "Piattaforme": [
-        st.Page(vinted, title="Vinted", icon="🟢", url_path="vinted"),
-        st.Page(ebay, title="eBay", icon="🔵", url_path="ebay"),
-    ],
-    "Subito": [
-        st.Page("app.py", title="Panoramica Subito", icon="🟠", url_path="subito", default=True),
-        st.Page("pages/dashboard.py", title="Dashboard", icon="📊", url_path="subito-dashboard"),
-        st.Page("pages/categorie.py", title="Categorie", icon="🎯", url_path="subito-categorie"),
-        st.Page("pages/annunci.py", title="Annunci venduti", icon="📦", url_path="subito-annunci"),
-        st.Page("pages/prezzi.py", title="Analisi prezzi", icon="💰", url_path="subito-prezzi"),
-        st.Page("pages/trend.py", title="Trend", icon="📈", url_path="subito-trend"),
-    ],
-}
-selected = st.navigation(pages, position="sidebar")
-selected.run()
+# Hide native navigation; render one consistently ordered platform sidebar.
+page = st.navigation(platform_pages + subito_pages, position="hidden")
+
+with st.sidebar:
+    st.title("MT TECH · Venduti")
+    st.caption("Anteprima sperimentale")
+    st.subheader("Piattaforme")
+    for destination in platform_pages:
+        st.page_link(destination)
+    st.divider()
+    st.subheader("Venduti Subito")
+    for destination in subito_pages:
+        st.page_link(destination)
+
+page.run()
