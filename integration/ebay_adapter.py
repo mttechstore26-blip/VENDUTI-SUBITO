@@ -40,8 +40,11 @@ def run_ebay_preview() -> None:
 
     st.caption("Modalità sperimentale: eBay utilizza una copia del database.")
     original_sys_path = sys.path[:]
+    vendor_dir = staging_root / "vendor"
     saved_env = {key: os.environ.get(key) for key in ("DB_PATH", "SOLDCOMPS_API_KEY")}
     try:
+        if vendor_dir.is_dir():
+            sys.path.insert(0, str(vendor_dir))
         sys.path.insert(0, str(repo_dir))
         os.environ["DB_PATH"] = str(preview_db)
         # Do not call SoldComps merely to render the preview.
