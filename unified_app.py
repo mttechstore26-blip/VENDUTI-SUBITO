@@ -145,7 +145,8 @@ with st.sidebar:
     st.title("MT TECH · Venduti")
     st.caption("Anteprima sperimentale")
     st.divider()
-    st.markdown(f"**{platform.upper()}**")\n    st.caption("Navigazione")
+    st.markdown(f"**{platform.upper()}**")
+    st.caption("Navigazione")
     if platform == "Subito":
         for destination in subito_pages:
             st.page_link(destination)
