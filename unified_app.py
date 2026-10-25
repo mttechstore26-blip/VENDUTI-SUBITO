@@ -20,8 +20,9 @@ def vinted():
 
 
 def ebay():
-    st.title("🔵 Venduti eBay")
-    st.info("Integrazione eBay in preparazione. Il servizio attuale resta invariato.")
+    from integration.ebay_adapter import run_ebay_preview
+
+    run_ebay_preview()
 
 
 platform_pages = [
