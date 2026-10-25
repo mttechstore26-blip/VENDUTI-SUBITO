@@ -37,6 +37,17 @@ def run_vinted_original():
         if not all(marker in code for marker in required):
             st.error("Versione Vinted non riconosciuta: avvio annullato per sicurezza.")
             return
+        hero_start = 'st.markdown(\n    """\n    <div class="dashboard-hero">'
+        hero_end = '    unsafe_allow_html=True,\n)'
+        first = code.find(hero_start)
+        if first < 0:
+            st.error("Intestazione Vinted non riconosciuta: anteprima non avviata.")
+            return
+        last = code.find(hero_end, first)
+        if last < 0:
+            st.error("Fine intestazione Vinted non riconosciuta.")
+            return
+        code = code[:first] + "# Unified portal owns the header\n" + code[last + len(hero_end):]
         code = code.replace(required[0], "# page config is owned by unified_app", 1)
         code = code.replace("\ninit_db()\n", "\n# schema migrations disabled in preview\n", 1)
         vinted_config.DB_PATH = SNAPSHOT
