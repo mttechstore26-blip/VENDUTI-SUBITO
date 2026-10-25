@@ -15,9 +15,9 @@ st.set_page_config(
 
 
 def vinted():
-    from integration.vinted_preview import run_vinted_preview
+    from integration.vinted_original_adapter import run_vinted_original
 
-    run_vinted_preview()
+    run_vinted_original()
 
 
 def ebay():
