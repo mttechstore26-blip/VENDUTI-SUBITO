@@ -1,0 +1,10 @@
+[Unit]
+Description=Check new sold opportunities every hour
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=mttech-staging-alerts.service
+
+[Install]
+WantedBy=timers.target
