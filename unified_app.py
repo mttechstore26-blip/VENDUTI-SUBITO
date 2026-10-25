@@ -59,11 +59,11 @@ box-shadow:0 4px 14px rgba(37,99,235,.10)}
 st.markdown('<div class="platform-switch-heading">Seleziona piattaforma</div>', unsafe_allow_html=True)
 st.markdown(
     '<nav class="platform-logo-nav" aria-label="Piattaforme">'
-    + '<a href="/vinted" title="Vinted" aria-label="Apri Vinted" class="' + ('active' if platform == 'Vinted' else '') + '">'
+    + '<a target="_parent" href="/vinted" title="Vinted" aria-label="Apri Vinted" class="' + ('active' if platform == 'Vinted' else '') + '">'
       '<img src="https://cdn.simpleicons.org/vinted/007782" alt="Vinted"></a>'
-    + '<a href="/ebay" title="eBay" aria-label="Apri eBay" class="' + ('active' if platform == 'eBay' else '') + '">'
+    + '<a target="_parent" href="/ebay" title="eBay" aria-label="Apri eBay" class="' + ('active' if platform == 'eBay' else '') + '">'
       '<img src="https://cdn.simpleicons.org/ebay" alt="eBay"></a>'
-    + '<a href="/subito-categorie" title="Subito" aria-label="Apri Subito" class="' + ('active' if platform == 'Subito' else '') + '">'
+    + '<a target="_parent" href="/subito-categorie" title="Subito" aria-label="Apri Subito" class="' + ('active' if platform == 'Subito' else '') + '">'
       '<span class="subito-wordmark">subito</span></a>'
     + '</nav>',
     unsafe_allow_html=True,
