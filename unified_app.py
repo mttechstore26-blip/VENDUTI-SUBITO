@@ -154,7 +154,8 @@ with st.sidebar:
         # The original Vinted app uses a radio with key main_section.
         # Set its state BEFORE running the original page.
         for label in ["📂 Categorie", "🧾 Annunci venduti", "❤️ Top Like"]:
-            if st.button(label, use_container_width=True, key="vinted_side_" + label,\n                         type="primary" if st.session_state.get("main_section", "📂 Categorie") == label else "secondary"):
+            if st.button(label, use_container_width=True, key="vinted_side_" + label,
+                         type="primary" if st.session_state.get("main_section", "📂 Categorie") == label else "secondary"):
                 st.session_state["main_section"] = label
                 st.rerun()
     else:
