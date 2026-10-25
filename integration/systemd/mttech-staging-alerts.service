@@ -1,0 +1,10 @@
+[Unit]
+Description=Optional Discord alerts from local sold listing snapshots
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/mttech-staging-alerts.env
+ExecStart=/opt/mt-tech-venduti-dashboard/.venv/bin/python /opt/mt-tech-venduti-staging/integration/discord_opportunities.py
+TimeoutStartSec=60
+NoNewPrivileges=true
