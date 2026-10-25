@@ -25,6 +25,8 @@ subito_pages = [
     st.Page("pages/prezzi.py", title="Analisi prezzi", icon="💰", url_path="subito-prezzi"),
     st.Page("pages/trend.py", title="Trend", icon="📈", url_path="subito-trend"),
     st.Page("pages/dashboard.py", title="Dashboard", icon="📊", url_path="subito-dashboard"),
+    st.Page("pages/universal_search.py", title="Ricerca universale", icon="🔎", url_path="ricerca-universale"),
+    st.Page("pages/prices_and_margins.py", title="Confronto e margini", icon="💶", url_path="confronto-margini"),
 ]
 page = st.navigation([vinted_page, ebay_page] + subito_pages, position="hidden")
 path = urlsplit(st.context.url).path.rstrip("/")
@@ -147,8 +149,12 @@ with st.sidebar:
     st.divider()
     st.markdown(f"**{platform.upper()}**")
     st.caption("Navigazione")
+    st.markdown("**Strumenti comuni**")
+    for destination in subito_pages[-2:]:
+        st.page_link(destination)
+    st.divider()
     if platform == "Subito":
-        for destination in subito_pages:
+        for destination in subito_pages[:-2]:
             st.page_link(destination)
     elif platform == "Vinted":
         # The original Vinted app uses a radio with key main_section.
