@@ -1,0 +1,11 @@
+[Unit]
+Description=Every 5 minutes: snapshot Vinted and eBay for unified staging
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+RandomizedDelaySec=10
+Unit=mttech-staging-snapshots.service
+
+[Install]
+WantedBy=timers.target
