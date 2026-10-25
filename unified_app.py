@@ -1,7 +1,8 @@
-"""MT TECH · Venduti: experimental one-process navigation shell.
+"""MT TECH · Venduti: experimental multipage shell.
 
-This is a navigation prototype, NOT a replacement for the three dashboards.
-Legacy code is deliberately not imported until modules and writes are isolated.
+Subito pages run directly from their original files. Vinted and eBay are
+placeholders until their imports and data writes have been isolated.
+Do not replace production services before staging smoke tests.
 """
 import streamlit as st
 
@@ -12,54 +13,35 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-PLATFORMS = {
-    "Vinted": ("🟢", "Categorie, brand, modelli e annunci venduti"),
-    "eBay": ("🔵", "Vendite SoldComps, famiglie, modelli e prezzi"),
-    "Subito": ("🟠", "Categorie, famiglie, annunci, prezzi e trend"),
-}
-
-
-def platform_page(name):
-    icon, description = PLATFORMS[name]
-    st.title(f"{icon} Venduti {name}")
-    st.caption(description)
-    st.info(
-        "Anteprima della navigazione unificata. "
-        "I dati e le funzioni reali verranno collegati solo dopo i test di "
-        "compatibilità e di isolamento dei moduli."
-    )
-
 
 def vinted():
-    platform_page("Vinted")
+    st.title("🟢 Venduti Vinted")
+    st.info("Integrazione Vinted in preparazione. Il servizio attuale resta invariato.")
 
 
 def ebay():
-    platform_page("eBay")
+    st.title("🔵 Venduti eBay")
+    st.info("Integrazione eBay in preparazione. Il servizio attuale resta invariato.")
 
 
-def subito():
-    platform_page("Subito")
-
-
-st.markdown(
-    """
-    <style>
-      .block-container {max-width: 1600px; padding-top: 1.25rem;}
-      section[data-testid="stSidebar"] {background: #f8fafc;}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 st.sidebar.title("MT TECH · Venduti")
-st.sidebar.caption("Anteprima tecnica — nessuna scrittura sui database")
+st.sidebar.caption("Anteprima sperimentale — database separati")
 
-selected = st.navigation(
-    [
-        st.Page(vinted, title="Vinted", icon="🟢", default=True),
-        st.Page(ebay, title="eBay", icon="🔵"),
-        st.Page(subito, title="Subito", icon="🟠"),
+# Streamlit executes only the selected page per rerun. The five existing
+# Subito pages continue to use data_cache, family_cache and the same SQLite.
+pages = {
+    "Piattaforme": [
+        st.Page(vinted, title="Vinted", icon="🟢", url_path="vinted"),
+        st.Page(ebay, title="eBay", icon="🔵", url_path="ebay"),
     ],
-    position="sidebar",
-)
+    "Subito": [
+        st.Page("app.py", title="Panoramica Subito", icon="🟠", url_path="subito", default=True),
+        st.Page("pages/dashboard.py", title="Dashboard", icon="📊", url_path="subito-dashboard"),
+        st.Page("pages/categorie.py", title="Categorie", icon="🎯", url_path="subito-categorie"),
+        st.Page("pages/annunci.py", title="Annunci venduti", icon="📦", url_path="subito-annunci"),
+        st.Page("pages/prezzi.py", title="Analisi prezzi", icon="💰", url_path="subito-prezzi"),
+        st.Page("pages/trend.py", title="Trend", icon="📈", url_path="subito-trend"),
+    ],
+}
+selected = st.navigation(pages, position="sidebar")
 selected.run()
