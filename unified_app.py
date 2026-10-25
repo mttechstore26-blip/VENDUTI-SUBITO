@@ -39,35 +39,45 @@ st.markdown("""
 <style>
 .platform-switch-heading {text-align:center; font-size:.73rem; font-weight:750;
 letter-spacing:.12em; text-transform:uppercase; color:#64748b; margin:0 0 8px}
-.platform-logo-nav {display:flex; justify-content:center; align-items:center; gap:12px; margin:0 auto 16px}
-.platform-logo-nav a {display:flex; align-items:center; justify-content:center; width:138px;
-height:54px; padding:10px 18px; border-radius:14px; border:1px solid #dbe2ec;
-background:#fff; text-decoration:none; transition:box-shadow .15s,border-color .15s}
-.platform-logo-nav a:hover {border-color:#94a3b8; box-shadow:0 5px 18px rgba(15,23,42,.12)}
-.platform-logo-nav a.active {border:2px solid #2563eb; background:#f1f6ff;
-box-shadow:0 4px 14px rgba(37,99,235,.10)}
-.platform-logo-nav img {display:block; max-width:104px; width:auto; height:27px; object-fit:contain}
-.platform-logo-nav .subito-wordmark {font-weight:900; font-size:25px; letter-spacing:-1.2px; color:#ff4c22}
-@media(max-width:600px) {
-.platform-logo-nav {gap:6px}
-.platform-logo-nav a {width:100px; height:48px; padding:7px}
-.platform-logo-nav img {max-width:80px; height:23px}
-.platform-logo-nav .subito-wordmark {font-size:20px}
+div[class*="st-key-platform_logo_"] button {
+    width:100%; min-height:58px; border-radius:14px;
+    background-color:#fff; border:1px solid #dbe2ec;
+    font-weight:850; font-size:20px;
 }
+div[class*="st-key-platform_logo_"] button:hover {
+    border-color:#2563eb; box-shadow:0 5px 18px rgba(15,23,42,.12);
+}
+div[class*="st-key-platform_logo_"] button p {font-size:20px; font-weight:850}
+div[class*="st-key-platform_logo_vinted"] button {
+    color:#007782;
+    background-image:url("https://cdn.simpleicons.org/vinted/007782");
+    background-repeat:no-repeat; background-position:center; background-size:auto 26px;
+}
+div[class*="st-key-platform_logo_ebay"] button {
+    background-image:url("https://cdn.simpleicons.org/ebay");
+    background-repeat:no-repeat; background-position:center; background-size:auto 29px;
+}
+div[class*="st-key-platform_logo_vinted"] button p,
+div[class*="st-key-platform_logo_ebay"] button p {opacity:0}
+div[class*="st-key-platform_logo_subito"] button {color:#ff4c22}
 </style>
 """, unsafe_allow_html=True)
 st.markdown('<div class="platform-switch-heading">Seleziona piattaforma</div>', unsafe_allow_html=True)
-st.markdown(
-    '<nav class="platform-logo-nav" aria-label="Piattaforme">'
-    + '<a target="_parent" href="/vinted" title="Vinted" aria-label="Apri Vinted" class="' + ('active' if platform == 'Vinted' else '') + '">'
-      '<img src="https://cdn.simpleicons.org/vinted/007782" alt="Vinted"></a>'
-    + '<a target="_parent" href="/ebay" title="eBay" aria-label="Apri eBay" class="' + ('active' if platform == 'eBay' else '') + '">'
-      '<img src="https://cdn.simpleicons.org/ebay" alt="eBay"></a>'
-    + '<a target="_parent" href="/subito-categorie" title="Subito" aria-label="Apri Subito" class="' + ('active' if platform == 'Subito' else '') + '">'
-      '<span class="subito-wordmark">subito</span></a>'
-    + '</nav>',
-    unsafe_allow_html=True,
-)
+left, middle, right = st.columns([1.5, 3, 1.5])
+with middle:
+    a, b, c = st.columns(3, gap="small")
+    with a:
+        if st.button("Vinted", key="platform_logo_vinted", use_container_width=True,
+                     type="primary" if platform == "Vinted" else "secondary"):
+            st.switch_page(vinted_page)
+    with b:
+        if st.button("eBay", key="platform_logo_ebay", use_container_width=True,
+                     type="primary" if platform == "eBay" else "secondary"):
+            st.switch_page(ebay_page)
+    with c:
+        if st.button("subito", key="platform_logo_subito", use_container_width=True,
+                     type="primary" if platform == "Subito" else "secondary"):
+            st.switch_page(subito_pages[0])
 
 with st.sidebar:
     st.title("MT TECH · Venduti")
