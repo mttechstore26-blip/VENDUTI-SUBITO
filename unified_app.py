@@ -15,8 +15,9 @@ st.set_page_config(
 
 
 def vinted():
-    st.title("🟢 Venduti Vinted")
-    st.info("Integrazione Vinted in preparazione. Il servizio attuale resta invariato.")
+    from integration.vinted_preview import run_vinted_preview
+
+    run_vinted_preview()
 
 
 def ebay():
