@@ -37,31 +37,58 @@ else:
 
 st.markdown("""
 <style>
-.platform-switch-heading {text-align:center; font-size:.73rem; font-weight:750;
-letter-spacing:.12em; text-transform:uppercase; color:#64748b; margin:0 0 8px}
+.platform-switch-heading {text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#64748b;margin:0 0 10px}
 div[class*="st-key-platform_logo_"] button {
-    width:100%; min-height:58px; border-radius:14px;
-    background-color:#fff; border:1px solid #dbe2ec;
-    font-weight:850; font-size:20px;
+ width:100%;min-height:62px;border-radius:15px;background:#fff !important;
+ border:1px solid #dbe2ec !important;box-shadow:0 3px 12px rgba(15,23,42,.045);
+ transition:all .16s ease;position:relative;
 }
 div[class*="st-key-platform_logo_"] button:hover {
-    border-color:#2563eb; box-shadow:0 5px 18px rgba(15,23,42,.12);
+ border-color:#818cf8 !important;box-shadow:0 7px 22px rgba(79,70,229,.13);
 }
-div[class*="st-key-platform_logo_"] button p {font-size:20px; font-weight:850}
-div[class*="st-key-platform_logo_vinted"] button {
-    color:#007782;
-    background-image:url("https://cdn.simpleicons.org/vinted/007782");
-    background-repeat:no-repeat; background-position:center; background-size:auto 26px;
+div[class*="st-key-platform_logo_"] button[kind="primary"] {
+ border:2px solid #6366f1 !important;background:#f4f3ff !important;
+ box-shadow:0 5px 18px rgba(99,102,241,.13);
 }
-div[class*="st-key-platform_logo_ebay"] button {
-    background-image:url("https://cdn.simpleicons.org/ebay");
-    background-repeat:no-repeat; background-position:center; background-size:auto 29px;
+div[class*="st-key-platform_logo_"] button p {font-size:0 !important}
+div[class*="st-key-platform_logo_"] button::after {
+ position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ font-weight:900;letter-spacing:-1px;pointer-events:none;
 }
-div[class*="st-key-platform_logo_vinted"] button p,
-div[class*="st-key-platform_logo_ebay"] button p {opacity:0}
-div[class*="st-key-platform_logo_subito"] button {color:#ff4c22}
+div[class*="st-key-platform_logo_vinted"] button::after {
+ content:"Vinted";color:#007782;font-size:27px;font-style:italic;letter-spacing:-1.5px;
+}
+div[class*="st-key-platform_logo_ebay"] button::after {
+ content:"eBay";font-size:29px;letter-spacing:-2px;
+ background:linear-gradient(90deg,#e53238 0% 30%,#0064d2 32% 55%,#f5af02 57% 75%,#86b817 78%);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+div[class*="st-key-platform_logo_subito"] button::after {
+ content:"subito";color:#f9423a;font-size:29px;letter-spacing:-1.5px;
+}
+/* Shared visual language for all three platform sidebars */
+section[data-testid="stSidebar"] {
+ background:linear-gradient(180deg,#f8faff 0%,#f1f5fb 100%) !important;
+ border-right:1px solid #e2e8f0;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {padding-top:1.25rem}
+section[data-testid="stSidebar"] h1 {font-size:1.48rem !important;letter-spacing:-.045em;font-weight:850;color:#18243b}
+section[data-testid="stSidebar"] h3 {font-size:.89rem !important;font-weight:800;color:#475569}
+section[data-testid="stSidebar"] button,
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a,
+section[data-testid="stSidebar"] [role="radiogroup"] label {
+ border-radius:10px !important;transition:background .14s ease,border-color .14s ease;
+}
+section[data-testid="stSidebar"] button:hover,
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover,
+section[data-testid="stSidebar"] [role="radiogroup"] label:hover {background:#e9edff !important}
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page"] {
+ background:#e8eaff !important;color:#3730a3 !important;font-weight:800;
+}
+section[data-testid="stSidebar"] hr {border-color:#e2e8f0}
 </style>
-""", unsafe_allow_html=True)
+""" , unsafe_allow_html=True)
+
 st.markdown('<div class="platform-switch-heading">Seleziona piattaforma</div>', unsafe_allow_html=True)
 left, middle, right = st.columns([1.5, 3, 1.5])
 with middle:
