@@ -1,5 +1,4 @@
 """Read-only, bounded cross-platform sold listings for staging analytics."""
-import os
 import re
 import sqlite3
 from pathlib import Path
@@ -25,7 +24,7 @@ def _read(path, query, params):
 
 @st.cache_data(ttl=120, max_entries=32, show_spinner=False)
 def search_sold(term, days, limit=MAX_ROWS):
-    terms = [token for token in re.split(r"\\s+", term.strip()) if token][:6]
+    terms = [token for token in re.split(r"\s+", term.strip()) if token][:6]
     if not terms:
         return pd.DataFrame(), {}
     limit = max(1, min(int(limit), MAX_ROWS))
