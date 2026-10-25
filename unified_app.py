@@ -37,18 +37,37 @@ else:
 
 st.markdown("""
 <style>
-.platform-switch-heading {text-align:center; font-size:.78rem; font-weight:700; letter-spacing:.12em;
-text-transform:uppercase; color:#64748b; margin:0 0 2px}
-div[data-testid="stSegmentedControl"] {display:flex; justify-content:center}
+.platform-switch-heading {text-align:center; font-size:.73rem; font-weight:750;
+letter-spacing:.12em; text-transform:uppercase; color:#64748b; margin:0 0 8px}
+.platform-logo-nav {display:flex; justify-content:center; align-items:center; gap:12px; margin:0 auto 16px}
+.platform-logo-nav a {display:flex; align-items:center; justify-content:center; width:138px;
+height:54px; padding:10px 18px; border-radius:14px; border:1px solid #dbe2ec;
+background:#fff; text-decoration:none; transition:box-shadow .15s,border-color .15s}
+.platform-logo-nav a:hover {border-color:#94a3b8; box-shadow:0 5px 18px rgba(15,23,42,.12)}
+.platform-logo-nav a.active {border:2px solid #2563eb; background:#f1f6ff;
+box-shadow:0 4px 14px rgba(37,99,235,.10)}
+.platform-logo-nav img {display:block; max-width:104px; width:auto; height:27px; object-fit:contain}
+.platform-logo-nav .subito-wordmark {font-weight:900; font-size:25px; letter-spacing:-1.2px; color:#ff4c22}
+@media(max-width:600px) {
+.platform-logo-nav {gap:6px}
+.platform-logo-nav a {width:100px; height:48px; padding:7px}
+.platform-logo-nav img {max-width:80px; height:23px}
+.platform-logo-nav .subito-wordmark {font-size:20px}
+}
 </style>
 """, unsafe_allow_html=True)
-st.markdown('<div class="platform-switch-heading">Piattaforma</div>', unsafe_allow_html=True)
-selected = st.segmented_control(
-    "Seleziona piattaforma", ["Vinted", "eBay", "Subito"],
-    default=platform, label_visibility="collapsed", key="platform_top_switch"
+st.markdown('<div class="platform-switch-heading">Seleziona piattaforma</div>', unsafe_allow_html=True)
+st.markdown(
+    '<nav class="platform-logo-nav" aria-label="Piattaforme">'
+    + '<a href="/vinted" title="Vinted" aria-label="Apri Vinted" class="' + ('active' if platform == 'Vinted' else '') + '">'
+      '<img src="https://cdn.simpleicons.org/vinted/007782" alt="Vinted"></a>'
+    + '<a href="/ebay" title="eBay" aria-label="Apri eBay" class="' + ('active' if platform == 'eBay' else '') + '">'
+      '<img src="https://cdn.simpleicons.org/ebay" alt="eBay"></a>'
+    + '<a href="/subito-categorie" title="Subito" aria-label="Apri Subito" class="' + ('active' if platform == 'Subito' else '') + '">'
+      '<span class="subito-wordmark">subito</span></a>'
+    + '</nav>',
+    unsafe_allow_html=True,
 )
-if selected and selected != platform:
-    st.switch_page({"Vinted": vinted_page, "eBay": ebay_page, "Subito": subito_pages[0]}[selected])
 
 with st.sidebar:
     st.title("MT TECH · Venduti")
