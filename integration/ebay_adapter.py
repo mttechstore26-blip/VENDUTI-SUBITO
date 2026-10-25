@@ -49,7 +49,13 @@ def run_ebay_preview() -> None:
         os.environ["DB_PATH"] = str(preview_db)
         # Do not call SoldComps merely to render the preview.
         os.environ["SOLDCOMPS_API_KEY"] = ""
-        runpy.run_path(str(script), run_name="__page__")
+        source = script.read_text(encoding="utf-8")
+        hero = """st.markdown('<div class="mt-hero"><div class="mt-title">📚 Venduti eBay</div><div class="mt-subtitle">MT TECH · Analisi per categorie · Raccolta senza parole chiave · Da 70 €</div></div>', unsafe_allow_html=True)"""
+        if hero not in source:
+            st.error("Intestazione eBay non riconosciuta: anteprima non avviata.")
+            return
+        source = source.replace(hero, "# Unified portal owns the header", 1)
+        exec(compile(source, str(script), "exec"), {"__name__": "__page__", "__file__": str(script)})
     finally:
         sys.path[:] = original_sys_path
         for key, value in saved_env.items():
