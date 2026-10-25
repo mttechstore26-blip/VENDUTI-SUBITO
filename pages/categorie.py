@@ -16,21 +16,6 @@ from manual_family_overrides import (
 
 st.markdown(GLOBAL_STYLE, unsafe_allow_html=True)
 
-st.markdown(
-    """
-    <div class="mt-hero">
-        <div class="mt-hero-top">
-            <div>
-                <div class="mt-hero-title">🎯 Radar categorie</div>
-                <div class="mt-hero-subtitle">Scopri dove si concentra la domanda, cosa ruota più velocemente e come si stanno muovendo i prezzi</div>
-            </div>
-            <div class="mt-live"><span class="mt-live-dot"></span> Radar live</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 def format_price(value):
     if pd.isna(value):
