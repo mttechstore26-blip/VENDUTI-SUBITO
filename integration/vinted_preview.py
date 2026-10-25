@@ -1,8 +1,8 @@
 """Isolated Vinted staging dashboard: read-only SQLite snapshot, no imports from Vinted app.py."""
 from pathlib import Path
-import os
 import sqlite3
 import pandas as pd
+from urllib.parse import urljoin
 import streamlit as st
 
 ROOT = Path("/opt/mt-tech-venduti-staging").resolve()
@@ -35,5 +35,18 @@ def run_vinted_preview():
     category = st.selectbox("Categoria", ["Tutte"] + sorted(df["category"].dropna().unique().tolist()))
     if category != "Tutte":
         df = df[df["category"] == category]
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    df = df.copy()
+    df["url"] = df["url"].fillna("").map(
+        lambda value: urljoin("https://www.vinted.it", str(value)) if str(value).strip() else ""
+    )
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "url": st.column_config.LinkColumn("Apri annuncio", display_text="Apri"),
+            "price": st.column_config.NumberColumn("Prezzo (€)", format="%.2f"),
+            "title": st.column_config.TextColumn("Annuncio", width="large"),
+        },
+    )
     st.caption("Vista di verifica: la dashboard Vinted completa sarà integrata dopo l'isolamento dei suoi moduli.")
