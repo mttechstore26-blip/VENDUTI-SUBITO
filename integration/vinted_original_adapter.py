@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import streamlit as st
 
+VENDOR = Path("/opt/mt-tech-venduti-staging/vendor")
 SOURCE = Path("/opt/vinted-venduti")
 SNAPSHOT = Path("/opt/mt-tech-venduti-staging/data/vinted_market_preview.db")
 
@@ -18,6 +19,8 @@ def run_vinted_original():
         st.error("Dashboard Vinted originale non trovata.")
         return
     # Imports must resolve to Vinted's own config/classifier/database modules.
+    if VENDOR.is_dir() and str(VENDOR) not in sys.path:
+        sys.path.insert(0, str(VENDOR))
     if str(SOURCE) not in sys.path:
         sys.path.insert(0, str(SOURCE))
     import config as vinted_config
