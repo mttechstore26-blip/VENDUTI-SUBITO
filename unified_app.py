@@ -86,6 +86,41 @@ section[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page
  background:#e8eaff !important;color:#3730a3 !important;font-weight:800;
 }
 section[data-testid="stSidebar"] hr {border-color:#e2e8f0}
+/* Identical menu-item geometry across Subito links, Vinted buttons and eBay radio */
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a,
+section[data-testid="stSidebar"] div[class*="st-key-vinted_side_"] button,
+section[data-testid="stSidebar"] [role="radiogroup"] label {
+ display:flex !important;align-items:center !important;justify-content:flex-start !important;
+ width:100% !important;min-height:38px !important;padding:8px 12px !important;
+ border:1px solid transparent !important;border-radius:11px !important;
+ background:transparent !important;box-shadow:none !important;
+ color:#334155 !important;font-size:.88rem !important;font-weight:650 !important;
+ text-align:left !important;margin:2px 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a p,
+section[data-testid="stSidebar"] div[class*="st-key-vinted_side_"] button p,
+section[data-testid="stSidebar"] [role="radiogroup"] label p {
+ font-size:.88rem !important;font-weight:650 !important;text-align:left !important;
+}
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover,
+section[data-testid="stSidebar"] div[class*="st-key-vinted_side_"] button:hover,
+section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+ background:#e9edff !important;color:#3730a3 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page"],
+section[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="true"],
+section[data-testid="stSidebar"] div[class*="st-key-vinted_side_"] button[kind="primary"],
+section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+ background:#e6eaff !important;color:#3730a3 !important;
+ border-color:#dce2ff !important;font-weight:800 !important;
+}
+section[data-testid="stSidebar"] div[class*="st-key-vinted_side_"] button[kind="primary"] p {
+ color:#3730a3 !important;font-weight:800 !important;
+}
+section[data-testid="stSidebar"] [role="radiogroup"] label [data-testid="stMarkdownContainer"] {flex:1}
+section[data-testid="stSidebar"] [role="radiogroup"] label [data-baseweb="radio"] {margin-right:7px}
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {font-size:.78rem;color:#64748b;font-weight:750}
+
 </style>
 """ , unsafe_allow_html=True)
 
@@ -110,7 +145,7 @@ with st.sidebar:
     st.title("MT TECH · Venduti")
     st.caption("Anteprima sperimentale")
     st.divider()
-    st.subheader(f"{platform} · Menu")
+    st.markdown(f"**{platform.upper()}**")\n    st.caption("Navigazione")
     if platform == "Subito":
         for destination in subito_pages:
             st.page_link(destination)
@@ -118,10 +153,10 @@ with st.sidebar:
         # The original Vinted app uses a radio with key main_section.
         # Set its state BEFORE running the original page.
         for label in ["📂 Categorie", "🧾 Annunci venduti", "❤️ Top Like"]:
-            if st.button(label, use_container_width=True, key="vinted_side_" + label):
+            if st.button(label, use_container_width=True, key="vinted_side_" + label,\n                         type="primary" if st.session_state.get("main_section", "📂 Categorie") == label else "secondary"):
                 st.session_state["main_section"] = label
                 st.rerun()
     else:
-        st.caption("Filtri e sezioni eBay disponibili nella dashboard originale.")
+        st.caption("Seleziona la sezione e usa i filtri qui sotto.")
 
 page.run()
