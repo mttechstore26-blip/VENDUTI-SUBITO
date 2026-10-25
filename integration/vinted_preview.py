@@ -39,14 +39,15 @@ def run_vinted_preview():
     df["url"] = df["url"].fillna("").map(
         lambda value: urljoin("https://www.vinted.it", str(value)) if str(value).strip() else ""
     )
+    df["title"] = df["url"]
     st.dataframe(
-        df,
+        df.drop(columns=["url"]),
         use_container_width=True,
         hide_index=True,
         column_config={
-            "url": st.column_config.LinkColumn("Apri annuncio", display_text="Apri"),
+            "title": st.column_config.LinkColumn("Annuncio", display_text=r"https://www.vinted.it/items/\\d+-(.*)"),
             "price": st.column_config.NumberColumn("Prezzo (€)", format="%.2f"),
-            "title": st.column_config.TextColumn("Annuncio", width="large"),
+
         },
     )
     st.caption("Vista di verifica: la dashboard Vinted completa sarà integrata dopo l'isolamento dei suoi moduli.")
