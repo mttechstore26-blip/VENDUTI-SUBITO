@@ -2092,6 +2092,22 @@ def detect_family(title, category=None):
 
     # Elettrodomestici: secondo pass basato sui titoli reali rimasti in Altro.
     if "elettrodomestici" in category_text or "eletrodomestici" in category_text:
+        # Classificazione Magnifica prima dei gruppi generici di macchine caffe.
+        # Non assegnare modelli specifici ad annunci di soli accessori.
+        if re.search(r"\b(?:magnifica|ecam\s*(?:21|22|220|290|320))\b", text):
+            accessory = re.search(r"\b(?:ricambi?|accessori?|serbatoio|vaschetta|cassetto|infusore|scheda|pompa|guarnizione|filtro|portafiltro|coperchio|pannello)\b", text)
+            if accessory:
+                return "Caffè • DeLonghi Magnifica • Ricambi / accessori"
+            magnifica_models = [
+                (r"\bmagnifica\s*evo(?:\s*next)?\b|\becam\s*290\s*\d{2,3}\b", "Caffè • DeLonghi Magnifica Evo"),
+                (r"\bmagnifica\s*plus\b|\becam\s*320\s*\d{2,3}\b", "Caffè • DeLonghi Magnifica Plus"),
+                (r"\bmagnifica\s*start\b|\becam\s*220\s*\d{2,3}\b", "Caffè • DeLonghi Magnifica Start"),
+                (r"\bmagnifica\s*s\b|\becam\s*(?:22\s*110|22\s*112|21\s*117)\b", "Caffè • DeLonghi Magnifica S"),
+                (r"\bmagnifica\b", "Caffè • DeLonghi Magnifica • Modello non identificato"),
+            ]
+            for pattern, family in magnifica_models:
+                if re.search(pattern, text):
+                    return family
         appliance_patterns = [
             # Vorwerk / Bimby / Folletto
             (r"\bbimby\s*(?:tm|t)?\s*31\b|\bbimby\s+t31\b", "Bimby TM31"),
