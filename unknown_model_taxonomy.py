@@ -297,6 +297,12 @@ RULES = {
         (r"\b(?:amd\s*v340)\b", "CPU vintage • AMD V340"),
     ],
     "elettrodomestici": [
+        # De'Longhi Magnifica: separate S, Evo, Start and Plus; no generic guessing.
+        (r"\b(?:magnifica\s*(?:evo|evo\s*next)|ecam\s*290\s*[.]?\s*\d{2,3})\b", "De'Longhi Magnifica Evo"),
+        (r"\b(?:magnifica\s*plus|ecam\s*320\s*[.]?\s*\d{2,3})\b", "De'Longhi Magnifica Plus"),
+        (r"\b(?:magnifica\s*start|ecam\s*220\s*[.]?\s*\d{2,3})\b", "De'Longhi Magnifica Start"),
+        (r"\b(?:magnifica\s*s\b|ecam\s*22\s*[.]?\s*110\b|ecam\s*22\s*[.]?\s*112\b|ecam\s*21\s*[.]?\s*117\b)", "De'Longhi Magnifica S"),
+        (r"\bmagnifica\b", "De'Longhi Magnifica • Modello non specificato"),
         # Recupero Elettrodomestici ottobre 2026: brand, modello o tipologia verificabile.
         (r"\bmacinino\b.*\beureka\b", "Caffè • Eureka Macinacaffè"),
         (r"\b(?:pompa\s+disincrostante)\b.*\bmanta\b", "Idraulica • Manta Pompa disincrostante 22 L"),
