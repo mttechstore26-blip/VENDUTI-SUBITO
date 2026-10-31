@@ -178,6 +178,29 @@ def normalize_text(value):
 def detect_family(title, category=None):
     text = normalize_text(title)
     category_text = normalize_text(category or "")
+    # Modelli caffe verificati nel CSV esportato: precedenza su famiglie generiche.
+    if "elettrodomestici" in category_text or "eletrodomestici" in category_text:
+        coffee_models = [
+            (r"\bcecotec\b.*\bcremmaet\b.*\blatte\s+art\b", "Caffè • Cecotec Cremmaet Latte Art"),
+            (r"\bfaber\b.*\bpro\s+deluxe\b", "Caffè • Faber Pro Deluxe"),
+            (r"\bsaeco\b.*\bincanto\b", "Caffè • Saeco Incanto"),
+            (r"\b(?:de\s*longhi|delonghi)\b.*\bdedica\s+duo\b|\bdedica\s+duo\b.*\b(?:de\s*longhi|delonghi)\b", "Caffè • DeLonghi Dedica Duo"),
+            (r"\bphilips\b.*\b(?:series\s*)?3300\b|\bphilips\b.*\bep\s*3324\s*40\b", "Caffè • Philips Serie 3300"),
+            (r"\bphilips\b.*\b5400\b", "Caffè • Philips Serie 5400"),
+            (r"\boutin\b.*\bmino\b", "Caffè • OutIn Mino"),
+            (r"\bmagnifica\s*evo\b", "Caffè • DeLonghi Magnifica Evo"),
+            (r"\bmagnifica\s*s\b", "Caffè • DeLonghi Magnifica S"),
+            (r"\brivelia\b", "Caffè • DeLonghi Rivelia"),
+            (r"\bla\s+specialista\b", "Caffè • DeLonghi La Specialista"),
+            (r"\b(?:de\s*longhi|delonghi)\b.*\bmacchina\s+caffe\b|\bmacchina\s+caffe\b.*\b(?:de\s*longhi|delonghi)\b", "Caffè • DeLonghi • Modello non identificato"),
+            (r"\billy\b|\billy\b", "Caffè • Illy • Modello non identificato"),
+            (r"\bpavoni\b", "Caffè • La Pavoni • Modello non identificato"),
+            (r"\bsmeg\b.*\bcaffe\b|\bcaffe\b.*\bsmeg\b", "Caffè • Smeg • Modello non identificato"),
+        ]
+        for pattern, label in coffee_models:
+            if re.search(pattern, text):
+                return label
+
 
     # Console 120–350: modelli realmente identificabili dai titoli esportati.
     # Le periferiche e i videogiochi hanno famiglie separate dalle console.
