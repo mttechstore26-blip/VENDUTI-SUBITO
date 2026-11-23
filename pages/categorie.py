@@ -3884,65 +3884,135 @@ if selected_rows:
         """,
         unsafe_allow_html=True,
     )
-    listing_view = family_listings[
-        ["Titolo", "Prezzo", "Venduto in", "Rilevato venduto", "Link"]
-    ].copy()
-    # Il frammento URL contiene solo l'etichetta visualizzata: non cambia
-    # la destinazione dell'annuncio. Le correzioni usano gli URL originali.
-    def clickable_title(row):
-        url = str(row["Link"] or "").strip()
-        if not url.startswith(("https://", "http://")):
-            return ""
-        title = str(row["Titolo"] or "").replace("#", " ").replace("\n", " ").strip()
-        return f"{url}#titolo={title}"
-
-    listing_view["Titolo"] = listing_view.apply(clickable_title, axis=1)
-    listing_view = listing_view.drop(columns=["Link"])
-
-    # Celle leggibili e distintive, lasciando interattivo il grid Streamlit.
-    def listing_row_style(row):
-        shade = "background-color: #f8faff" if row.name % 2 else "background-color: #ffffff"
-        return [shade] * len(row)
-
-    def listing_price_style(_value):
-        return "background-color: #eaf2ff; color: #1d4ed8; font-weight: 800"
-
-    def listing_speed_style(value):
-        label = str(value)
-        if "🔥🔥🔥🔥" in label or "🔥🔥🔥" in label:
-            return "background-color: #dcfce7; color: #166534; font-weight: 800"
-        if "🔥🔥" in label:
-            return "background-color: #ecfdf5; color: #047857; font-weight: 750"
-        if "🔥" in label:
-            return "background-color: #fff7ed; color: #9a3412; font-weight: 750"
-        return "background-color: #f1f5f9; color: #475569; font-weight: 650"
-
-    styled_listing_view = (
-        listing_view.style
-        .apply(listing_row_style, axis=1)
-        .map(listing_price_style, subset=["Prezzo"])
-        .map(listing_speed_style, subset=["Venduto in"])
-        .map(lambda _: "color: #64748b; font-weight: 550", subset=["Rilevato venduto"])
-        .set_properties(**{"font-size": "16px"})
+    # Tabella compatta con azione per riga: un vero pulsante a fianco del titolo.
+    # Streamlit st.dataframe non supporta pulsanti cliccabili nelle celle.
+    known_families = sorted(
+        name for name in df.loc[
+            df["category"] == selected_category, "Famiglia"
+        ].dropna().astype(str).unique()
+        if name and name != "PS5 — tutte le versioni"
     )
-    listing_event = st.dataframe(
-        styled_listing_view,
-        hide_index=True,
-        width="stretch",
-        height=610,
-        row_height=49,
-        column_config={
-            "Titolo": st.column_config.LinkColumn("Annuncio", display_text=r"#titolo=(.*)$", width="large"),
-            "Prezzo": st.column_config.TextColumn("Prezzo", width="small"),
-            "Venduto in": st.column_config.TextColumn("Venduto in", width="small"),
-            "Rilevato venduto": st.column_config.TextColumn("Rilevato venduto", width="medium"),
-        },
-        on_select="rerun",
-        selection_mode="multi-row",
-        key=f"family_bulk_listing_selection_{selected_category}_{selected_family}",
+
+    @st.dialog("✏️ Cambia famiglia dell'annuncio")
+    def edit_listing_family(url, title):
+        st.caption(str(title))
+        current_family = str(selected_family)
+        choices = known_families + ["➕ Crea una nuova famiglia"]
+        default = choices.index(current_family) if current_family in choices else 0
+        with st.form("inline_family_editor_form"):
+            target = st.selectbox("Famiglia di destinazione", choices, index=default)
+            new_name = st.text_input(
+                "Nome della nuova famiglia (se necessario)", max_chars=120
+            ) if target == "➕ Crea una nuova famiglia" else ""
+            submitted = st.form_submit_button("💾 Salva modifica", type="primary")
+        if submitted:
+            chosen = new_name.strip() if target == "➕ Crea una nuova famiglia" else target
+            if not chosen:
+                st.error("Inserisci il nome della famiglia.")
+            else:
+                try:
+                    save_override(url, chosen)
+                    st.success(f"Annuncio spostato in: {chosen}")
+                    st.rerun()
+                except (ValueError, OSError, __import__("sqlite3").Error) as exc:
+                    st.error(f"Salvataggio non riuscito: {exc}")
+
+    # 15 righe per pagina per mantenere reattiva la vista anche su smartphone.
+    rows_per_page = 15
+    total_pages = max(1, (len(family_listings) + rows_per_page - 1) // rows_per_page)
+    page_key = f"family_page_{selected_category}_{selected_family}"
+    current_page = st.session_state.get(page_key, 1)
+    if current_page > total_pages:
+        current_page = 1
+    if total_pages > 1:
+        current_page = st.select_slider(
+            "Pagina annunci", options=list(range(1, total_pages + 1)),
+            value=current_page, key=page_key,
+            format_func=lambda value: f"{value} / {total_pages}",
+        )
+    start_row = (current_page - 1) * rows_per_page
+    visible_listings = family_listings.iloc[
+        start_row:start_row + rows_per_page
+    ]
+    st.markdown(
+        """
+        <style>
+        .mt-family-table-head {
+            padding: 12px 15px; border-radius: 13px;
+            background: linear-gradient(100deg,#172554,#312e81);
+            color: white; font-weight: 800; font-size: .86rem;
+            margin: 12px 0 8px;
+        }
+        .mt-family-item-title a {
+            color: #1e40af; text-decoration: none; font-weight: 750;
+            line-height: 1.35; overflow-wrap: anywhere;
+        }
+        .mt-family-item-title a:hover { text-decoration: underline; }
+        .mt-family-price { color:#1d4ed8; font-weight: 850; }
+        .mt-family-muted { color:#64748b; font-size:.89rem; }
+        </style>
+        <div class="mt-family-table-head">
+            ☑ Seleziona · Annuncio e modifica · Prezzo · Velocità · Data
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    selected_listing_indices = list(listing_event.selection.rows) if listing_event else []
-    selected_listing_rows = family_listings.iloc[selected_listing_indices].copy() if selected_listing_indices else family_listings.iloc[:0].copy()
+    for idx, listing in visible_listings.iterrows():
+        url = str(listing["Link"] or "").strip()
+        title = str(listing["Titolo"] or "")
+        item_id = listing_id(url)
+        row_cols = st.columns([0.48, 5.1, 0.93, 1.25, 1.55, 0.85], gap="small", vertical_alignment="center")
+        checkbox_key = f"family_selected_{selected_category}_{selected_family}_{idx}"
+        with row_cols[0]:
+            st.checkbox(
+                "Seleziona annuncio", key=checkbox_key,
+                label_visibility="collapsed", disabled=not bool(item_id),
+            )
+        with row_cols[1]:
+            if url.startswith(("https://", "http://")):
+                st.markdown(
+                    '<div class="mt-family-item-title"><a href="'
+                    + escape(url, quote=True) + '" target="_blank" rel="noopener noreferrer">'
+                    + escape(title) + '</a></div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(escape(title))
+        with row_cols[2]:
+            if st.button(
+                "✏️", key=f"edit_family_{selected_category}_{selected_family}_{idx}",
+                help="Modifica famiglia di destinazione", disabled=not bool(item_id),
+                use_container_width=True,
+            ):
+                edit_listing_family(url, title)
+        with row_cols[3]:
+            st.markdown(
+                '<span class="mt-family-price">' + escape(str(listing["Prezzo"])) + '</span>',
+                unsafe_allow_html=True,
+            )
+        with row_cols[4]:
+            st.markdown(escape(str(listing["Venduto in"])))
+        with row_cols[5]:
+            st.markdown(
+                '<span class="mt-family-muted">' + escape(str(listing["Rilevato venduto"])) + '</span>',
+                unsafe_allow_html=True,
+            )
+        st.markdown(
+            '<div style="height:1px;background:#e8edf5;margin:1px 0 5px"></div>',
+            unsafe_allow_html=True,
+        )
+
+    # La selezione resta disponibile anche cambiando pagina.
+    selected_listing_indices = [
+        idx for idx in family_listings.index
+        if st.session_state.get(
+            f"family_selected_{selected_category}_{selected_family}_{idx}", False
+        ) and listing_id(family_listings.loc[idx, "Link"])
+    ]
+    selected_listing_rows = (
+        family_listings.loc[selected_listing_indices].copy()
+        if selected_listing_indices else family_listings.iloc[:0].copy()
+    )
     selected_listing_urls = selected_listing_rows["Link"].dropna().astype(str).tolist()
 
     with st.expander(
