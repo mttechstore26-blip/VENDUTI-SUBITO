@@ -3934,25 +3934,59 @@ if selected_rows:
     visible_listings = family_listings.iloc[
         start_row:start_row + rows_per_page
     ]
+    # Layout compatto: titolo come link testuale e pulsante subito a fianco.
+    # Le righe restano componenti Streamlit, quindi la modifica è interattiva.
     st.markdown(
         """
         <style>
-        .mt-family-table-head {
-            padding: 12px 15px; border-radius: 13px;
-            background: linear-gradient(100deg,#172554,#312e81);
-            color: white; font-weight: 800; font-size: .86rem;
-            margin: 12px 0 8px;
+        .mt-family-head {
+            display:grid;grid-template-columns: 37px minmax(0,5.5fr) minmax(92px,1.1fr)
+                minmax(116px,1.25fr) minmax(155px,1.7fr);
+            gap:9px;padding:10px 13px;background:#edf2fa;border:1px solid #dce5f2;
+            border-radius:10px 10px 0 0;color:#475569;font-size:12px;font-weight:800;
+            letter-spacing:.02em;
         }
-        .mt-family-item-title a {
-            color: #1e40af; text-decoration: none; font-weight: 750;
-            line-height: 1.35; overflow-wrap: anywhere;
+        [class*="st-key-family_compact_row_"] {
+            border-bottom:1px solid #e8edf5;
+            background:#ffffff;
+            padding:5px 12px 2px;
         }
-        .mt-family-item-title a:hover { text-decoration: underline; }
-        .mt-family-price { color:#1d4ed8; font-weight: 850; }
-        .mt-family-muted { color:#64748b; font-size:.89rem; }
+        [class*="st-key-family_compact_row_"]:nth-of-type(even) {background:#f8fafc;}
+        [class*="st-key-family_compact_row_"]:hover {background:#f0f6ff;}
+        [class*="st-key-family_compact_row_"] [data-testid="stVerticalBlock"] {
+            gap:0 !important;
+        }
+        [class*="st-key-family_compact_row_"] [data-testid="stHorizontalBlock"] {
+            gap:.45rem !important;
+            align-items:center;
+        }
+        [class*="st-key-family_compact_row_"] .stButton button {
+            min-height:29px !important;height:29px !important;
+            padding:2px 8px !important;border-radius:7px !important;
+            box-shadow:none !important;background:#f1f5f9 !important;
+            border:1px solid #d9e2ee !important;
+        }
+        [class*="st-key-family_compact_row_"] [data-testid="stMarkdownContainer"] p {
+            margin:0 !important;
+        }
+        .mt-compact-title a {
+            color:#172033!important;text-decoration:none!important;
+            font-size:14px;font-weight:800;line-height:1.3;
+        }
+        .mt-compact-title a:hover {color:#1d4ed8!important;text-decoration:underline!important;}
+        .mt-compact-price {font-weight:800;color:#1d4ed8;font-size:14px;}
+        .mt-compact-speed {font-size:13px;color:#334155;font-weight:650;}
+        .mt-compact-date {font-size:12px;color:#64748b;white-space:nowrap;}
+        @media(max-width:800px) {
+            .mt-family-head {display:none;}
+            [class*="st-key-family_compact_row_"] {padding:5px 4px;}
+            .mt-compact-title a {font-size:13px;}
+            .mt-compact-date {white-space:normal;}
+        }
         </style>
-        <div class="mt-family-table-head">
-            ☑ Seleziona · Annuncio e modifica · Prezzo · Velocità · Data
+        <div class="mt-family-head">
+            <span>☑</span><span>Annuncio</span><span>Prezzo</span>
+            <span>Venduto in</span><span>Rilevato venduto</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -3961,46 +3995,60 @@ if selected_rows:
         url = str(listing["Link"] or "").strip()
         title = str(listing["Titolo"] or "")
         item_id = listing_id(url)
-        row_cols = st.columns([0.48, 5.1, 0.93, 1.25, 1.55, 0.85], gap="small", vertical_alignment="center")
         checkbox_key = f"family_selected_{selected_category}_{selected_family}_{idx}"
-        with row_cols[0]:
-            st.checkbox(
-                "Seleziona annuncio", key=checkbox_key,
-                label_visibility="collapsed", disabled=not bool(item_id),
+        with st.container(key=f"family_compact_row_{idx}"):
+            select_col, title_col, price_col, speed_col, date_col = st.columns(
+                [0.38, 5.5, 1.1, 1.25, 1.7], gap="small", vertical_alignment="center"
             )
-        with row_cols[1]:
-            if url.startswith(("https://", "http://")):
+            with select_col:
+                st.checkbox(
+                    "Seleziona annuncio", key=checkbox_key,
+                    label_visibility="collapsed", disabled=not bool(item_id),
+                )
+            with title_col:
+                # Il contenitore orizzontale non distribuisce i componenti
+                # su tutta la larghezza: la matita rimane accanto al testo.
+                with st.container(
+                    horizontal=True, horizontal_alignment="left",
+                    vertical_alignment="center", gap="small"
+                ):
+                    safe_title = escape(title)
+                    if url.startswith(("https://", "http://")):
+                        st.markdown(
+                            '<span class="mt-compact-title"><a href="'
+                            + escape(url, quote=True)
+                            + '" target="_blank" rel="noopener noreferrer">'
+                            + safe_title + '</a></span>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            '<span class="mt-compact-title">' + safe_title + '</span>',
+                            unsafe_allow_html=True,
+                        )
+                    if st.button(
+                        "✏️", key=f"edit_family_{selected_category}_{selected_family}_{idx}",
+                        help="Cambia famiglia", disabled=not bool(item_id),
+                    ):
+                        edit_listing_family(url, title)
+            with price_col:
                 st.markdown(
-                    '<div class="mt-family-item-title"><a href="'
-                    + escape(url, quote=True) + '" target="_blank" rel="noopener noreferrer">'
-                    + escape(title) + '</a></div>',
+                    '<span class="mt-compact-price">'
+                    + escape(str(listing["Prezzo"])) + '</span>',
                     unsafe_allow_html=True,
                 )
-            else:
-                st.markdown(escape(title))
-        with row_cols[2]:
-            if st.button(
-                "✏️", key=f"edit_family_{selected_category}_{selected_family}_{idx}",
-                help="Modifica famiglia di destinazione", disabled=not bool(item_id),
-                use_container_width=True,
-            ):
-                edit_listing_family(url, title)
-        with row_cols[3]:
-            st.markdown(
-                '<span class="mt-family-price">' + escape(str(listing["Prezzo"])) + '</span>',
-                unsafe_allow_html=True,
-            )
-        with row_cols[4]:
-            st.markdown(escape(str(listing["Venduto in"])))
-        with row_cols[5]:
-            st.markdown(
-                '<span class="mt-family-muted">' + escape(str(listing["Rilevato venduto"])) + '</span>',
-                unsafe_allow_html=True,
-            )
-        st.markdown(
-            '<div style="height:1px;background:#e8edf5;margin:1px 0 5px"></div>',
-            unsafe_allow_html=True,
-        )
+            with speed_col:
+                st.markdown(
+                    '<span class="mt-compact-speed">'
+                    + escape(str(listing["Venduto in"])) + '</span>',
+                    unsafe_allow_html=True,
+                )
+            with date_col:
+                st.markdown(
+                    '<span class="mt-compact-date">'
+                    + escape(str(listing["Rilevato venduto"])) + '</span>',
+                    unsafe_allow_html=True,
+                )
 
     # La selezione resta disponibile anche cambiando pagina.
     selected_listing_indices = [
